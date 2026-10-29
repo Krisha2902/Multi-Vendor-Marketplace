@@ -1,12 +1,17 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
   ShoppingBag, 
   Search, 
   Heart, 
   ShoppingCart, 
   Menu, 
-  X 
+  X,
+  User as UserIcon,
+  LogOut,
+  Shield,
+  ChevronDown
 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 export default function Navbar({ 
   cartCount, 
@@ -17,9 +22,24 @@ export default function Navbar({
   setSearchQuery,
   activeTab,
   setActiveTab,
-  onOpenSellerModal
+  onOpenSellerModal,
+  onOpenAuthModal
 }) {
-  const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
+  const { user, logout } = useAuth();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setUserDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const navLinks = [
     { name: 'Home', id: 'home' },
@@ -111,14 +131,57 @@ export default function Navbar({
             )}
           </button>
 
-          {/* User Profile Avatar */}
-          <div className="user-avatar-wrap" title="Account / Profile">
-            <img
-              src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=80&q=80"
-              alt="User profile avatar"
-              className="user-avatar-img"
-            />
-          </div>
+          {/* User Profile or Sign In Button */}
+          {user ? (
+            <div className="user-profile-menu-container" ref={dropdownRef}>
+              <button 
+                className="user-profile-trigger-btn"
+                onClick={() => setUserDropdownOpen(!userDropdownOpen)}
+                aria-label="User Account Menu"
+              >
+                <div className="user-avatar-wrap">
+                  <div className="user-initial-badge">
+                    {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                  </div>
+                </div>
+                <span className="user-firstname-text">{user.name.split(' ')[0]}</span>
+                <ChevronDown size={14} className={`dropdown-chevron ${userDropdownOpen ? 'open' : ''}`} />
+              </button>
+
+              {userDropdownOpen && (
+                <div className="user-dropdown-menu">
+                  <div className="user-dropdown-header">
+                    <p className="dropdown-user-name">{user.name}</p>
+                    <p className="dropdown-user-email">{user.email}</p>
+                    <div className="dropdown-role-badge">
+                      <Shield size={12} />
+                      <span>{user.role}</span>
+                    </div>
+                  </div>
+                  <div className="dropdown-divider" />
+                  <button
+                    className="dropdown-item-btn logout-btn"
+                    onClick={() => {
+                      logout();
+                      setUserDropdownOpen(false);
+                    }}
+                  >
+                    <LogOut size={16} />
+                    <span>Log Out</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <button
+              className="navbar-signin-btn"
+              onClick={onOpenAuthModal}
+              title="Sign in or create account"
+            >
+              <UserIcon size={17} />
+              <span>Sign In</span>
+            </button>
+          )}
 
           {/* Mobile Hamburger Toggle */}
           <button
@@ -154,6 +217,44 @@ export default function Navbar({
                 {link.name}
               </button>
             ))}
+
+            <div className="mobile-nav-divider" />
+
+            {user ? (
+              <div className="mobile-user-card">
+                <div className="mobile-user-info">
+                  <div className="user-initial-badge sm">
+                    {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                  </div>
+                  <div>
+                    <p className="mobile-user-name">{user.name}</p>
+                    <p className="mobile-user-role">{user.role}</p>
+                  </div>
+                </div>
+                <button
+                  className="mobile-logout-btn"
+                  onClick={() => {
+                    logout();
+                    setMobileMenuOpen(false);
+                  }}
+                >
+                  <LogOut size={16} />
+                  <span>Log Out</span>
+                </button>
+              </div>
+            ) : (
+              <button
+                className="mobile-signin-btn"
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  onOpenAuthModal();
+                }}
+              >
+                <UserIcon size={18} />
+                <span>Sign In / Register</span>
+              </button>
+            )}
+
             <button 
               className="mobile-seller-btn"
               onClick={() => {

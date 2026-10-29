@@ -16,6 +16,7 @@ import QuickViewModal from './components/QuickViewModal';
 import SellerModal from './components/SellerModal';
 import SellerDetailModal from './components/SellerDetailModal';
 import CheckoutModal from './components/CheckoutModal';
+import AuthModal from './components/AuthModal';
 import Toast from './components/Toast';
 
 import { FEATURED_PRODUCTS, NEW_ARRIVALS, CATEGORIES } from './data/mockData';
@@ -45,6 +46,7 @@ export default function App() {
   const [isWishlistOpen, setIsWishlistOpen] = useState(false);
   const [isSellerModalOpen, setIsSellerModalOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [quickViewProduct, setQuickViewProduct] = useState(null);
   const [selectedSeller, setSelectedSeller] = useState(null);
 
@@ -173,6 +175,7 @@ export default function App() {
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         onOpenSellerModal={() => setIsSellerModalOpen(true)}
+        onOpenAuthModal={() => setIsAuthModalOpen(true)}
       />
 
       {/* Main Page Content */}
@@ -348,6 +351,13 @@ export default function App() {
         onClose={() => setIsCheckoutOpen(false)}
         cartItems={cartItems}
         onOrderComplete={handleOrderComplete}
+      />
+
+      {/* Auth Modal (Login / Register) */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        onShowToast={showToast}
       />
 
       {/* Toast Notification */}
