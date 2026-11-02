@@ -4,11 +4,15 @@
   "description": "",
   "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nodemon server.js",
-    "start": "node server.js",
-    "seedadmin": "node src/scripts/seedAdmin.js"
-  },
+  "test": "echo \"Error: no test specified\" && exit 1",
+  "dev": "nodemon server.js",
+  "start": "node server.js",
+  "seedadmin": "node src/scripts/seedAdmin.js",
+  "seedcategories": "node src/scripts/seedCategories.js",
+  "seedvendors": "node src/scripts/seedVendors.js",
+  "seedproducts": "node src/scripts/seedProducts.js",
+  "verify:integrity": "node src/scripts/verifyIntegrity.js"
+},
   "keywords": [],
   "author": "",
   "license": "ISC",
@@ -24,6 +28,6 @@
     "morgan": "^1.12.1"
   },
   "devDependencies": {
-    "nodemon": "^3.1.14"
+    "nodemon": "^1.0.2"
   }
 }
