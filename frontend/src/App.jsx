@@ -8,6 +8,8 @@ import NewArrivals from './components/NewArrivals';
 import JoinSellerBanner from './components/JoinSellerBanner';
 import TrustSection from './components/TrustSection';
 import Footer from './components/Footer';
+import AdminVendors from './components/AdminVendors';
+import VendorDashboard from './components/VendorDashboard';
 
 // Drawers & Modals
 import CartDrawer from './components/CartDrawer';
@@ -180,106 +182,120 @@ export default function App() {
 
       {/* Main Page Content */}
       <main className="main-content">
-        {/* 2. Hero Section */}
-        <HeroSection
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-          onSearchSubmit={() => scrollToSection('featured-products-section')}
-        />
+        {activeTab === 'admin' ? (
+          <AdminVendors 
+            onBackToHome={() => setActiveTab('home')} 
+            onShowToast={showToast} 
+          />
+        ) : activeTab === 'vendor-dashboard' ? (
+          <VendorDashboard 
+            onBackToHome={() => setActiveTab('home')} 
+            onShowToast={showToast} 
+          />
+        ) : (
+          <>
+            {/* 2. Hero Section */}
+            <HeroSection
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
+              onSearchSubmit={() => scrollToSection('featured-products-section')}
+            />
 
-        {/* 3. Category Bar */}
-        <CategoriesBar
-          selectedCategory={selectedCategory}
-          onSelectCategory={(catId) => {
-            setSelectedCategory(catId);
-            if (catId) {
-              scrollToSection('featured-products-section');
-              const catObj = CATEGORIES.find((c) => c.id === catId);
-              showToast(`Showing ${catObj ? catObj.name : ''} products`);
-            } else {
-              showToast('Showing all products');
-            }
-          }}
-        />
+            {/* 3. Category Bar */}
+            <CategoriesBar
+              selectedCategory={selectedCategory}
+              onSelectCategory={(catId) => {
+                setSelectedCategory(catId);
+                if (catId) {
+                  scrollToSection('featured-products-section');
+                  const catObj = CATEGORIES.find((c) => c.id === catId);
+                  showToast(`Showing ${catObj ? catObj.name : ''} products`);
+                } else {
+                  showToast('Showing all products');
+                }
+              }}
+            />
 
-        {/* Active Filter Notice */}
-        {(searchQuery || selectedCategory) && (
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '0.75rem 1.25rem',
-            marginBottom: '1.5rem',
-            backgroundColor: '#ffffff',
-            borderRadius: '12px',
-            border: '1px solid #ebe5da',
-            fontSize: '0.88rem'
-          }}>
-            <span>
-              Filtering by: {searchQuery && <strong>"{searchQuery}" </strong>}
-              {selectedCategory && (
-                <span className="qv-tag-pill" style={{ marginLeft: '6px' }}>
-                  Category: {CATEGORIES.find((c) => c.id === selectedCategory)?.name}
+            {/* Active Filter Notice */}
+            {(searchQuery || selectedCategory) && (
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '0.75rem 1.25rem',
+                marginBottom: '1.5rem',
+                backgroundColor: '#ffffff',
+                borderRadius: '12px',
+                border: '1px solid #ebe5da',
+                fontSize: '0.88rem'
+              }}>
+                <span>
+                  Filtering by: {searchQuery && <strong>"{searchQuery}" </strong>}
+                  {selectedCategory && (
+                    <span className="qv-tag-pill" style={{ marginLeft: '6px' }}>
+                      Category: {CATEGORIES.find((c) => c.id === selectedCategory)?.name}
+                    </span>
+                  )}
                 </span>
-              )}
-            </span>
-            <button
-              onClick={() => {
-                setSearchQuery('');
+                <button
+                  onClick={() => {
+                    setSearchQuery('');
+                    setSelectedCategory(null);
+                  }}
+                  style={{
+                    fontSize: '0.82rem',
+                    color: '#cf633a',
+                    fontWeight: '600',
+                    textDecoration: 'underline'
+                  }}
+                >
+                  Clear filters
+                </button>
+              </div>
+            )}
+
+            {/* 4. Featured Products Section */}
+            <FeaturedProducts
+              products={filteredFeatured.length > 0 ? filteredFeatured : FEATURED_PRODUCTS}
+              wishlistIds={wishlistIds}
+              onToggleWishlist={handleToggleWishlist}
+              onAddToCart={handleAddToCart}
+              onQuickView={(p) => setQuickViewProduct(p)}
+              onViewAll={() => {
                 setSelectedCategory(null);
+                setSearchQuery('');
+                showToast('Browsing all featured marketplace items');
               }}
-              style={{
-                fontSize: '0.82rem',
-                color: '#cf633a',
-                fontWeight: '600',
-                textDecoration: 'underline'
+            />
+
+            {/* 5. Featured Sellers Section */}
+            <FeaturedSellers
+              onSelectSeller={(seller) => setSelectedSeller(seller)}
+            />
+
+            {/* 6. New Arrivals Section */}
+            <NewArrivals
+              products={filteredNewArrivals.length > 0 ? filteredNewArrivals : NEW_ARRIVALS}
+              wishlistIds={wishlistIds}
+              onToggleWishlist={handleToggleWishlist}
+              onAddToCart={handleAddToCart}
+              onQuickView={(p) => setQuickViewProduct(p)}
+              onViewAll={() => {
+                setSelectedCategory(null);
+                setSearchQuery('');
+                showToast('Browsing latest arrivals from independent sellers');
               }}
-            >
-              Clear filters
-            </button>
-          </div>
+            />
+
+            {/* 7. Join as a Seller Banner */}
+            <JoinSellerBanner
+              onOpenSellerModal={() => setIsSellerModalOpen(true)}
+            />
+
+            {/* 8. Why Choose ShopNest? Section */}
+            <TrustSection />
+          </>
         )}
-
-        {/* 4. Featured Products Section */}
-        <FeaturedProducts
-          products={filteredFeatured.length > 0 ? filteredFeatured : FEATURED_PRODUCTS}
-          wishlistIds={wishlistIds}
-          onToggleWishlist={handleToggleWishlist}
-          onAddToCart={handleAddToCart}
-          onQuickView={(p) => setQuickViewProduct(p)}
-          onViewAll={() => {
-            setSelectedCategory(null);
-            setSearchQuery('');
-            showToast('Browsing all featured marketplace items');
-          }}
-        />
-
-        {/* 5. Featured Sellers Section */}
-        <FeaturedSellers
-          onSelectSeller={(seller) => setSelectedSeller(seller)}
-        />
-
-        {/* 6. New Arrivals Section */}
-        <NewArrivals
-          products={filteredNewArrivals.length > 0 ? filteredNewArrivals : NEW_ARRIVALS}
-          wishlistIds={wishlistIds}
-          onToggleWishlist={handleToggleWishlist}
-          onAddToCart={handleAddToCart}
-          onQuickView={(p) => setQuickViewProduct(p)}
-          onViewAll={() => {
-            setSelectedCategory(null);
-            setSearchQuery('');
-            showToast('Browsing latest arrivals from independent sellers');
-          }}
-        />
-
-        {/* 7. Join as a Seller Banner */}
-        <JoinSellerBanner
-          onOpenSellerModal={() => setIsSellerModalOpen(true)}
-        />
-
-        {/* 8. Why Choose ShopNest? Section */}
-        <TrustSection />
       </main>
 
       {/* 9. Footer */}
@@ -332,6 +348,11 @@ export default function App() {
         isOpen={isSellerModalOpen}
         onClose={() => setIsSellerModalOpen(false)}
         onShowToast={showToast}
+        onOpenAuthModal={() => setIsAuthModalOpen(true)}
+        onGoToVendorDashboard={() => {
+          setIsSellerModalOpen(false);
+          setActiveTab('vendor-dashboard');
+        }}
       />
 
       {/* Seller Detail Showcase Modal */}

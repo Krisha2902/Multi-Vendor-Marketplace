@@ -62,12 +62,12 @@ Har din ek **vertical slice** hoga: backend API + usi din frontend integration. 
 **End of day:** UI se login/register chalta hai aur token save hota hai.
 
 ### Day 2 — Vendor Flow
-- [ ] Vendor model: shopName, category, description, status (`pending/approved/rejected`)
-- [ ] `POST /vendors/apply`
-- [ ] `PATCH /admin/vendors/:id/approve` aur `/reject`
-- [ ] Frontend: `SellerModal.jsx` ko API se jodna
-- [ ] Basic `/admin` page: applications list + approve/reject buttons
-- [ ] Vendor Dashboard ka basic layout
+- [x] Vendor model: shopName, category, description, status (`pending/approved/rejected`)
+- [x] `POST /vendors/apply`
+- [x] `PATCH /admin/vendors/:id/approve` aur `/reject`
+- [x] Frontend: `SellerModal.jsx` ko API se jodna
+- [x] Basic `/admin` page: applications list + approve/reject buttons
+- [x] Vendor Dashboard ka basic layout
 
 **End of day:** Vendor apply karta hai, admin approve karta hai, vendor login karke dashboard dekh sakta hai.
 
