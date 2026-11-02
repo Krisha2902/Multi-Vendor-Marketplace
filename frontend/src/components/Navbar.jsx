@@ -9,7 +9,10 @@ import {
   User as UserIcon,
   LogOut,
   Shield,
-  ChevronDown
+  ChevronDown,
+  ShieldCheck,
+  Store,
+  Sparkles
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -131,6 +134,29 @@ export default function Navbar({
             )}
           </button>
 
+          {/* Role Portal Quick Buttons */}
+          {user?.role === 'admin' && (
+            <button
+              className="portal-badge-btn admin-portal-btn"
+              onClick={() => setActiveTab('admin')}
+              title="Open Admin Review Panel"
+            >
+              <ShieldCheck size={14} />
+              <span>Admin Panel</span>
+            </button>
+          )}
+
+          {user?.role === 'vendor' && (
+            <button
+              className="portal-badge-btn vendor-portal-btn"
+              onClick={() => setActiveTab('vendor-dashboard')}
+              title="Open Vendor Dashboard"
+            >
+              <Store size={14} />
+              <span>Vendor Hub</span>
+            </button>
+          )}
+
           {/* User Profile or Sign In Button */}
           {user ? (
             <div className="user-profile-menu-container" ref={dropdownRef}>
@@ -141,23 +167,67 @@ export default function Navbar({
               >
                 <div className="user-avatar-wrap">
                   <div className="user-initial-badge">
-                    {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                    {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
                   </div>
                 </div>
-                <span className="user-firstname-text">{user.name.split(' ')[0]}</span>
+                <span className="user-firstname-text">
+                  {user?.name ? user.name.split(' ')[0] : 'User'}
+                </span>
                 <ChevronDown size={14} className={`dropdown-chevron ${userDropdownOpen ? 'open' : ''}`} />
               </button>
 
               {userDropdownOpen && (
                 <div className="user-dropdown-menu">
                   <div className="user-dropdown-header">
-                    <p className="dropdown-user-name">{user.name}</p>
-                    <p className="dropdown-user-email">{user.email}</p>
+                    <p className="dropdown-user-name">{user?.name || 'User'}</p>
+                    <p className="dropdown-user-email">{user?.email || ''}</p>
                     <div className="dropdown-role-badge">
                       <Shield size={12} />
-                      <span>{user.role}</span>
+                      <span>{user?.role || 'customer'}</span>
                     </div>
                   </div>
+                  <div className="dropdown-divider" />
+
+                  {/* Role Specific Navigation */}
+                  {user.role === 'admin' && (
+                    <button
+                      className="dropdown-item-btn portal-link-btn"
+                      onClick={() => {
+                        setActiveTab('admin');
+                        setUserDropdownOpen(false);
+                      }}
+                    >
+                      <ShieldCheck size={16} />
+                      <span>Admin Review Panel</span>
+                    </button>
+                  )}
+
+                  {user.role === 'vendor' && (
+                    <button
+                      className="dropdown-item-btn portal-link-btn"
+                      onClick={() => {
+                        setActiveTab('vendor-dashboard');
+                        setUserDropdownOpen(false);
+                      }}
+                    >
+                      <Store size={16} />
+                      <span>Vendor Dashboard</span>
+                    </button>
+                  )}
+
+                  {user.role === 'customer' && (
+                    <button
+                      className="dropdown-item-btn portal-link-btn"
+                      onClick={() => {
+                        onOpenSellerModal();
+                        setUserDropdownOpen(false);
+                      }}
+                    >
+                      <Sparkles size={16} />
+                      <span>Become a Seller</span>
+                    </button>
+                  )}
+
                   <div className="dropdown-divider" />
                   <button
                     className="dropdown-item-btn logout-btn"
@@ -224,11 +294,11 @@ export default function Navbar({
               <div className="mobile-user-card">
                 <div className="mobile-user-info">
                   <div className="user-initial-badge sm">
-                    {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                    {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
                   </div>
                   <div>
-                    <p className="mobile-user-name">{user.name}</p>
-                    <p className="mobile-user-role">{user.role}</p>
+                    <p className="mobile-user-name">{user?.name || 'User'}</p>
+                    <p className="mobile-user-role">{user?.role || 'customer'}</p>
                   </div>
                 </div>
                 <button
@@ -255,15 +325,44 @@ export default function Navbar({
               </button>
             )}
 
-            <button 
-              className="mobile-seller-btn"
-              onClick={() => {
-                setMobileMenuOpen(false);
-                onOpenSellerModal();
-              }}
-            >
-              Become a Seller
-            </button>
+            {user?.role === 'admin' && (
+              <button
+                className="mobile-seller-btn admin-theme"
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  setActiveTab('admin');
+                }}
+              >
+                <ShieldCheck size={16} />
+                <span>Admin Review Panel</span>
+              </button>
+            )}
+
+            {user?.role === 'vendor' && (
+              <button
+                className="mobile-seller-btn vendor-theme"
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  setActiveTab('vendor-dashboard');
+                }}
+              >
+                <Store size={16} />
+                <span>Vendor Dashboard</span>
+              </button>
+            )}
+
+            {user?.role !== 'vendor' && (
+              <button 
+                className="mobile-seller-btn"
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  onOpenSellerModal();
+                }}
+              >
+                <Sparkles size={16} />
+                <span>Become a Seller</span>
+              </button>
+            )}
           </div>
         </div>
       )}

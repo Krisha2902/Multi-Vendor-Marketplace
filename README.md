@@ -37,8 +37,8 @@ Vendora is a multi-vendor e-commerce platform where multiple sellers can list an
 * `docs/` — Project flow and API documentation
 
 ## Development Status
-
-Initial repository setup.
+- **Day 1:** Authentication (JWT, Register, Login, AuthContext, Seed Admin)
+- **Day 2:** Vendor Flow (Vendor Model, Apply API, Admin Approval/Rejection, Vendor Dashboard) — See [DAY_2_README.md](file:///c:/alexora/Multi-Vendor-Marketplace/DAY_2_README.md) for details.
 
 ## Team
 
@@ -49,5 +49,5 @@ This project is being developed collaboratively by a team of six members as part
 
 
 
- adddd
+ addddbcccccccccccddddd
  

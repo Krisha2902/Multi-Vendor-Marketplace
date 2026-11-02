@@ -3,6 +3,8 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import authRoutes from './routes/auth.routes.js';
+import vendorRoutes from './routes/vendor.routes.js';
+import adminRoutes from './routes/admin.routes.js';
 import { errorHandler } from './middlewares/errorHandler.js';
 
 const app = express();
@@ -14,6 +16,8 @@ app.use(morgan('dev'));
 
 app.get('/api/health', (req, res) => res.json({ ok: true }));
 app.use('/api/auth', authRoutes);
+app.use('/api/vendors', vendorRoutes);
+app.use('/api/admin', adminRoutes);
 
 app.use(errorHandler);
 
