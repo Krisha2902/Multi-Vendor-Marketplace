@@ -12,6 +12,7 @@ import AdminVendors from './components/AdminVendors';
 import VendorDashboard from './components/VendorDashboard';
 import ShopPage from './components/ShopPage';
 import CategoriesPage from './components/CategoriesPage';
+import SellersPage from './components/SellersPage';
 
 // Drawers & Modals
 import CartDrawer from './components/CartDrawer';
@@ -225,6 +226,16 @@ export default function App() {
             }}
             onShowToast={showToast}
           />
+        ) : activeTab === 'sellers' ? (
+          <SellersPage
+            onSelectSeller={(seller) => setSelectedSeller(seller)}
+            onOpenSellerModal={() => setIsSellerModalOpen(true)}
+            onNavigateHome={() => {
+              setActiveTab('home');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            onShowToast={showToast}
+          />
         ) : (
           <>
             {/* 2. Hero Section */}
@@ -336,10 +347,7 @@ export default function App() {
         onSubscribe={handleNewsletterSubscribe}
         onNavClick={(tab) => {
           setActiveTab(tab);
-          if (tab === 'sellers') scrollToSection('featured-sellers-section');
-          else if (tab === 'categories' || tab === 'shop' || tab === 'home') window.scrollTo({ top: 0, behavior: 'smooth' });
-          else if (tab === 'shop') scrollToSection('featured-products-section');
-          else if (tab === 'home') window.scrollTo({ top: 0, behavior: 'smooth' });
+          window.scrollTo({ top: 0, behavior: 'smooth' });
         }}
       />
 

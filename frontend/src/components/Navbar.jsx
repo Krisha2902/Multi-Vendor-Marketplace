@@ -56,11 +56,8 @@ export default function Navbar({
     setActiveTab(id);
     setMobileMenuOpen(false);
     
-    if (id === 'shop' || id === 'categories' || id === 'home') {
+    if (id === 'shop' || id === 'categories' || id === 'sellers' || id === 'home') {
       window.scrollTo({ top: 0, behavior: 'smooth' });
-    } else if (id === 'sellers') {
-      const el = document.getElementById('featured-sellers-section');
-      if (el) el.scrollIntoView({ behavior: 'smooth' });
     }
   };
 
