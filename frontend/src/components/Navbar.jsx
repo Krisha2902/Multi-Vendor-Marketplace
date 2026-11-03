@@ -56,14 +56,13 @@ export default function Navbar({
     setActiveTab(id);
     setMobileMenuOpen(false);
     
-    if (id === 'sellers') {
+    if (id === 'shop') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else if (id === 'sellers') {
       const el = document.getElementById('featured-sellers-section');
       if (el) el.scrollIntoView({ behavior: 'smooth' });
     } else if (id === 'categories') {
       const el = document.getElementById('categories-bar-section');
-      if (el) el.scrollIntoView({ behavior: 'smooth' });
-    } else if (id === 'shop') {
-      const el = document.getElementById('featured-products-section');
       if (el) el.scrollIntoView({ behavior: 'smooth' });
     } else if (id === 'home') {
       window.scrollTo({ top: 0, behavior: 'smooth' });

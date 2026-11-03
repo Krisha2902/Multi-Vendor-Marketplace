@@ -10,6 +10,7 @@ import TrustSection from './components/TrustSection';
 import Footer from './components/Footer';
 import AdminVendors from './components/AdminVendors';
 import VendorDashboard from './components/VendorDashboard';
+import ShopPage from './components/ShopPage';
 
 // Drawers & Modals
 import CartDrawer from './components/CartDrawer';
@@ -192,6 +193,18 @@ export default function App() {
             onBackToHome={() => setActiveTab('home')} 
             onShowToast={showToast} 
           />
+        ) : activeTab === 'shop' ? (
+          <ShopPage
+            wishlistIds={wishlistIds}
+            onToggleWishlist={handleToggleWishlist}
+            onAddToCart={handleAddToCart}
+            onQuickView={(p) => setQuickViewProduct(p)}
+            onNavigateHome={() => {
+              setActiveTab('home');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            onShowToast={showToast}
+          />
         ) : (
           <>
             {/* 2. Hero Section */}
@@ -262,9 +275,9 @@ export default function App() {
               onAddToCart={handleAddToCart}
               onQuickView={(p) => setQuickViewProduct(p)}
               onViewAll={() => {
-                setSelectedCategory(null);
-                setSearchQuery('');
-                showToast('Browsing all featured marketplace items');
+                setActiveTab('shop');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                showToast('Browsing all featured catalog items in Shop');
               }}
             />
 
@@ -281,9 +294,9 @@ export default function App() {
               onAddToCart={handleAddToCart}
               onQuickView={(p) => setQuickViewProduct(p)}
               onViewAll={() => {
-                setSelectedCategory(null);
-                setSearchQuery('');
-                showToast('Browsing latest arrivals from independent sellers');
+                setActiveTab('shop');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                showToast('Browsing latest arrivals in Shop');
               }}
             />
 
