@@ -13,6 +13,7 @@ import VendorDashboard from './components/VendorDashboard';
 import ShopPage from './components/ShopPage';
 import CategoriesPage from './components/CategoriesPage';
 import SellersPage from './components/SellersPage';
+import AboutPage from './components/AboutPage';
 
 // Drawers & Modals
 import CartDrawer from './components/CartDrawer';
@@ -234,6 +235,19 @@ export default function App() {
               setActiveTab('home');
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }}
+            onShowToast={showToast}
+          />
+        ) : activeTab === 'about' ? (
+          <AboutPage
+            onNavigateHome={() => {
+              setActiveTab('home');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            onNavigateShop={() => {
+              setActiveTab('shop');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            onOpenSellerModal={() => setIsSellerModalOpen(true)}
             onShowToast={showToast}
           />
         ) : (
