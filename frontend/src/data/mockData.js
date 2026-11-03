@@ -515,3 +515,352 @@ export const SHOP_CATALOG_PRODUCTS = [
     description: 'Cold-pressed botanical serum enriched with rosehip seed oil and vitamin C for radiant dewy skin.'
   }
 ];
+
+export const EXPLORE_CATEGORIES = [
+  {
+    id: 'fashion',
+    name: 'Fashion',
+    count: '1.2k+ Products',
+    image: 'https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?auto=format&fit=crop&w=800&q=80',
+    description: 'Apparel, footwear & curated lifestyle essentials'
+  },
+  {
+    id: 'home',
+    name: 'Home & Living',
+    count: '960+ Products',
+    image: 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=800&q=80',
+    description: 'Furniture, decor, lighting & cosy interior accents'
+  },
+  {
+    id: 'beauty',
+    name: 'Beauty',
+    count: '760+ Products',
+    image: 'https://images.unsplash.com/photo-1598440947619-2c35fc9aa908?auto=format&fit=crop&w=800&q=80',
+    description: 'Skincare, haircare, wellness & signature fragrances'
+  },
+  {
+    id: 'electronics',
+    name: 'Electronics',
+    count: '1.5k+ Products',
+    image: 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&w=800&q=80',
+    description: 'Smart tech, wearables, audio gear & computing'
+  },
+  {
+    id: 'sports',
+    name: 'Sports',
+    count: '540+ Products',
+    image: 'https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?auto=format&fit=crop&w=800&q=80',
+    description: 'Athletic wear, sneakers, gym gear & outdoor essentials'
+  },
+  {
+    id: 'toys',
+    name: 'Toys & Games',
+    count: '680+ Products',
+    image: 'https://images.unsplash.com/photo-1559454403-b8fb88521f11?auto=format&fit=crop&w=800&q=80',
+    description: 'Plush toys, educational games, puzzles & fun finds'
+  },
+  {
+    id: 'books',
+    name: 'Books',
+    count: '420+ Products',
+    image: 'https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&w=800&q=80',
+    description: 'Classics, paperbacks, journals & collector editions'
+  },
+  {
+    id: 'handmade',
+    name: 'Handmade',
+    count: '310+ Products',
+    image: 'https://images.unsplash.com/photo-1578749556568-bc2c40e68b61?auto=format&fit=crop&w=800&q=80',
+    description: 'Artisan pottery, handwoven crafts & bespoke gifts'
+  }
+];
+
+export const POPULAR_CATEGORIES_CIRCLES = [
+  { id: 'fashion', name: 'Fashion', iconName: 'Shirt', bg: '#f1eee7', iconColor: '#5c6352' },
+  { id: 'home', name: 'Home & Living', iconName: 'Home', bg: '#faeee3', iconColor: '#a8623d' },
+  { id: 'beauty', name: 'Beauty', iconName: 'Flower2', bg: '#fbe8ea', iconColor: '#b8546b' },
+  { id: 'electronics', name: 'Electronics', iconName: 'Laptop', bg: '#e8f0f8', iconColor: '#3d6c99' },
+  { id: 'sports', name: 'Sports', iconName: 'Dumbbell', bg: '#e5f3ed', iconColor: '#367c61' },
+  { id: 'toys', name: 'Toys & Games', iconName: 'Gamepad2', bg: '#fdeee7', iconColor: '#ba583a' },
+  { id: 'handmade', name: 'Handmade', iconName: 'Scissors', bg: '#fdf3de', iconColor: '#a67b28' }
+];
+
+export const DISCOVER_MORE_PRODUCTS = [
+  {
+    id: 'disc-1',
+    name: 'Aesthetic Mug',
+    seller: 'UrbanCraft',
+    brand: 'UrbanCraft',
+    price: 499,
+    originalPrice: 699,
+    discount: '29% OFF',
+    rating: 4.8,
+    reviews: '1.2k',
+    category: 'home',
+    image: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=700&q=80',
+    description: 'Speckled ceramic mug with inspiring typography print. Microwavable and dishwasher safe.'
+  },
+  {
+    id: 'disc-2',
+    name: 'Cotton T-Shirt',
+    seller: 'StyleStudio',
+    brand: 'Zara',
+    price: 799,
+    originalPrice: 999,
+    discount: '20% OFF',
+    rating: 4.7,
+    reviews: '856',
+    category: 'fashion',
+    image: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=700&q=80',
+    description: 'Ultra-soft heavy combed cotton t-shirt with ribbed crew neck and relaxed comfort fit.'
+  },
+  {
+    id: 'disc-3',
+    name: 'Mini Plant Pot',
+    seller: 'GreenHome',
+    brand: 'UrbanCraft',
+    price: 399,
+    originalPrice: 599,
+    discount: '33% OFF',
+    rating: 4.8,
+    reviews: '742',
+    category: 'home',
+    image: 'https://images.unsplash.com/photo-1485955900006-10f4d324d411?auto=format&fit=crop&w=700&q=80',
+    description: 'Minimalist glazed white ceramic planter perfect for succulents, herbs and desk decoration.'
+  },
+  {
+    id: 'disc-4',
+    name: 'Wireless Earbuds',
+    seller: 'TechNest',
+    brand: 'Sony',
+    price: 1999,
+    originalPrice: 2999,
+    discount: '33% OFF',
+    rating: 4.7,
+    reviews: '677',
+    category: 'electronics',
+    image: 'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?auto=format&fit=crop&w=700&q=80',
+    description: 'True wireless stereo earbuds with active noise cancellation, deep bass, and fast wireless charging.'
+  }
+];
+
+
+export const ALL_FEATURED_SELLERS_PAGE = [
+  {
+    id: 'seller-urbancraft',
+    name: 'UrbanCraft',
+    category: 'Handmade Home Decor',
+    ratingScore: 4.9,
+    reviewsCount: '1.2k',
+    productsCount: '250+',
+    location: 'Surat, India',
+    bio: 'Bringing handmade elegance to your home with love & creativity.',
+    iconName: 'Home',
+    bg: '#faeee3',
+    iconColor: '#a8623d',
+    avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=200&q=80',
+    coverImage: 'https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&w=800&q=80',
+    thumbnails: [
+      { id: 'uc-1', title: 'Ceramic Plant Pot', price: 599, image: 'https://images.unsplash.com/photo-1485955900006-10f4d324d411?auto=format&fit=crop&w=300&q=80' },
+      { id: 'uc-2', title: 'Aesthetic Coffee Mug', price: 499, image: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=300&q=80' },
+      { id: 'uc-3', title: 'Insulated Bottle', price: 799, image: 'https://images.unsplash.com/photo-1602143407151-7111542de6e8?auto=format&fit=crop&w=300&q=80' }
+    ]
+  },
+  {
+    id: 'seller-stylestudio',
+    name: 'StyleStudio',
+    category: 'Fashion & Accessories',
+    ratingScore: 4.7,
+    reviewsCount: '980',
+    productsCount: '180+',
+    location: 'Mumbai, India',
+    bio: 'Trendy fashion for every you.',
+    isMonogram: true,
+    monogramText: 'St.',
+    bg: '#f2efe9',
+    iconColor: '#2b302a',
+    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
+    coverImage: 'https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?auto=format&fit=crop&w=800&q=80',
+    thumbnails: [
+      { id: 'ss-1', title: 'Cotton T-Shirt', price: 799, image: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=300&q=80' },
+      { id: 'ss-2', title: 'Bow Tote Bag', price: 799, image: 'https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=300&q=80' },
+      { id: 'ss-3', title: 'Linen Dress', price: 1499, image: 'https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?auto=format&fit=crop&w=300&q=80' }
+    ]
+  },
+  {
+    id: 'seller-technest',
+    name: 'TechNest',
+    category: 'Electronics & Gadgets',
+    ratingScore: 4.8,
+    reviewsCount: '760',
+    productsCount: '120+',
+    location: 'Bengaluru, India',
+    bio: 'Smart Tech. Smarter Choice.',
+    iconName: 'Laptop',
+    bg: '#e8f0f8',
+    iconColor: '#3d6c99',
+    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80',
+    coverImage: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=800&q=80',
+    thumbnails: [
+      { id: 'tn-1', title: 'Wireless Headphones', price: 2499, image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=300&q=80' },
+      { id: 'tn-2', title: 'Smart Watch', price: 3499, image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=300&q=80' },
+      { id: 'tn-3', title: 'Wireless Earbuds', price: 1999, image: 'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?auto=format&fit=crop&w=300&q=80' }
+    ]
+  },
+  {
+    id: 'seller-bloombeauty',
+    name: 'BloomBeauty',
+    category: 'Beauty & Skincare',
+    ratingScore: 4.7,
+    reviewsCount: '640',
+    productsCount: '100+',
+    location: 'Jaipur, India',
+    bio: 'Pure organic botanical beauty crafted for everyday glow.',
+    iconName: 'Flower2',
+    bg: '#fbe8ea',
+    iconColor: '#b8546b',
+    avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=200&q=80',
+    coverImage: 'https://images.unsplash.com/photo-1598440947619-2c35fc9aa908?auto=format&fit=crop&w=800&q=80',
+    thumbnails: [
+      { id: 'bb-1', title: 'Floral Perfume', price: 1299, image: 'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?auto=format&fit=crop&w=300&q=80' },
+      { id: 'bb-2', title: 'Makeup Brush Set', price: 1199, image: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=300&q=80' },
+      { id: 'bb-3', title: 'Face Serum', price: 1499, image: 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=300&q=80' }
+    ]
+  }
+];
+
+export const TOP_RATED_SELLERS_PAGE = [
+  {
+    id: 'top-urbancraft',
+    name: 'UrbanCraft',
+    category: 'Handmade Home Decor',
+    ratingScore: 4.9,
+    reviewsCount: '2.5k',
+    location: 'Surat, India',
+    bio: 'Bringing handmade elegance to your home with love & creativity.',
+    iconName: 'Home',
+    bg: '#faeee3',
+    iconColor: '#a8623d',
+    avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=200&q=80',
+    coverImage: 'https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&w=800&q=80',
+    productsCount: '250+',
+    thumbnails: [
+      { id: 'uc-t1', title: 'Ceramic Plant Pot', price: 599, image: 'https://images.unsplash.com/photo-1485955900006-10f4d324d411?auto=format&fit=crop&w=300&q=80' },
+      { id: 'uc-t2', title: 'Aesthetic Coffee Mug', price: 499, image: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=300&q=80' }
+    ]
+  },
+  {
+    id: 'top-stylestudio',
+    name: 'StyleStudio',
+    category: 'Fashion & Accessories',
+    ratingScore: 4.8,
+    reviewsCount: '1.8k',
+    location: 'Mumbai, India',
+    bio: 'Trendy fashion for every you.',
+    isMonogram: true,
+    monogramText: 'St',
+    bg: '#f2efe9',
+    iconColor: '#2b302a',
+    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80',
+    coverImage: 'https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?auto=format&fit=crop&w=800&q=80',
+    productsCount: '180+',
+    thumbnails: [
+      { id: 'ss-t1', title: 'Cotton T-Shirt', price: 799, image: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=300&q=80' },
+      { id: 'ss-t2', title: 'Bow Tote Bag', price: 799, image: 'https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=300&q=80' }
+    ]
+  },
+  {
+    id: 'top-technest',
+    name: 'TechNest',
+    category: 'Electronics & Gadgets',
+    ratingScore: 4.8,
+    reviewsCount: '1.6k',
+    location: 'Bengaluru, India',
+    bio: 'Smart Tech. Smarter Choice.',
+    iconName: 'Laptop',
+    bg: '#e8f0f8',
+    iconColor: '#3d6c99',
+    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80',
+    coverImage: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=800&q=80',
+    productsCount: '120+',
+    thumbnails: [
+      { id: 'tn-t1', title: 'Wireless Headphones', price: 2499, image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=300&q=80' },
+      { id: 'tn-t2', title: 'Smart Watch', price: 3499, image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=300&q=80' }
+    ]
+  }
+];
+
+export const DISCOVER_NEW_STORES_PAGE = [
+  {
+    id: 'store-bloomaura',
+    name: 'BloomAura',
+    category: 'Beauty & Wellness',
+    ratingScore: 4.7,
+    reviewsCount: '520',
+    productsCount: '80+',
+    location: 'Kerala, India',
+    bio: 'Ayurvedic formulations and mindful botanical self-care remedies.',
+    iconName: 'Sprout',
+    bg: '#e8f5ec',
+    iconColor: '#367c61',
+    avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=200&q=80',
+    thumbnails: [
+      { id: 'ba-1', title: 'Botanical Face Oil', price: 899, image: 'https://images.unsplash.com/photo-1608248597359-bb58cf9fb811?auto=format&fit=crop&w=300&q=80' },
+      { id: 'ba-2', title: 'Herbal Clay Mask', price: 549, image: 'https://images.unsplash.com/photo-1567928815117-640a3e0f9b69?auto=format&fit=crop&w=300&q=80' }
+    ]
+  },
+  {
+    id: 'store-craftbloom',
+    name: 'CraftBloom',
+    category: 'Handmade Crafts',
+    ratingScore: 4.8,
+    reviewsCount: '430',
+    productsCount: '70+',
+    location: 'Ahmedabad, India',
+    bio: 'Hand-knitted textiles, macrame wall art, and cozy rustic accents.',
+    iconName: 'Sparkles',
+    bg: '#fae8ee',
+    iconColor: '#ba5875',
+    avatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=200&q=80',
+    thumbnails: [
+      { id: 'cb-1', title: 'Macrame Plant Hanger', price: 449, image: 'https://images.unsplash.com/photo-1525974160448-038dacadcc71?auto=format&fit=crop&w=300&q=80' },
+      { id: 'cb-2', title: 'Woven Coasters Set', price: 349, image: 'https://images.unsplash.com/photo-1596178060671-7a80dc8059ea?auto=format&fit=crop&w=300&q=80' }
+    ]
+  },
+  {
+    id: 'store-trendlane',
+    name: 'TrendLane',
+    category: 'Fashion & Lifestyle',
+    ratingScore: 4.6,
+    reviewsCount: '390',
+    productsCount: '60+',
+    location: 'Delhi, India',
+    bio: 'Everyday casual minimalism and contemporary street silhouettes.',
+    iconName: 'Shirt',
+    bg: '#eff2ec',
+    iconColor: '#5c6352',
+    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&q=80',
+    thumbnails: [
+      { id: 'tl-1', title: 'Oversized Linen Shirt', price: 1199, image: 'https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?auto=format&fit=crop&w=300&q=80' },
+      { id: 'tl-2', title: 'Canvas Tote Bag', price: 599, image: 'https://images.unsplash.com/photo-1597484662317-c9314418ad1d?auto=format&fit=crop&w=300&q=80' }
+    ]
+  },
+  {
+    id: 'store-giftnest',
+    name: 'GiftNest',
+    category: 'Gifts & Personalised',
+    ratingScore: 4.7,
+    reviewsCount: '410',
+    productsCount: '75+',
+    location: 'Pune, India',
+    bio: 'Customized wooden plaques, celebratory hampers, and memory keepsakes.',
+    iconName: 'Gift',
+    bg: '#faeee3',
+    iconColor: '#a8623d',
+    avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&q=80',
+    thumbnails: [
+      { id: 'gn-1', title: 'Engraved Keepsake Box', price: 849, image: 'https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&w=300&q=80' },
+      { id: 'gn-2', title: 'Hand-Poured Scented Candle', price: 499, image: 'https://images.unsplash.com/photo-1603006905003-be475563bc59?auto=format&fit=crop&w=300&q=80' }
+    ]
+  }
+];
