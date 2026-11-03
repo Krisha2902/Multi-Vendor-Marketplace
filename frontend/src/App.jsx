@@ -11,6 +11,7 @@ import Footer from './components/Footer';
 import AdminVendors from './components/AdminVendors';
 import VendorDashboard from './components/VendorDashboard';
 import ShopPage from './components/ShopPage';
+import CategoriesPage from './components/CategoriesPage';
 
 // Drawers & Modals
 import CartDrawer from './components/CartDrawer';
@@ -205,6 +206,25 @@ export default function App() {
             }}
             onShowToast={showToast}
           />
+        ) : activeTab === 'categories' ? (
+          <CategoriesPage
+            wishlistIds={wishlistIds}
+            onToggleWishlist={handleToggleWishlist}
+            onAddToCart={handleAddToCart}
+            onQuickView={(p) => setQuickViewProduct(p)}
+            onNavigateShop={(catId) => {
+              if (catId) {
+                setSelectedCategory(catId);
+              }
+              setActiveTab('shop');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            onNavigateHome={() => {
+              setActiveTab('home');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            onShowToast={showToast}
+          />
         ) : (
           <>
             {/* 2. Hero Section */}
@@ -317,7 +337,7 @@ export default function App() {
         onNavClick={(tab) => {
           setActiveTab(tab);
           if (tab === 'sellers') scrollToSection('featured-sellers-section');
-          else if (tab === 'categories') scrollToSection('categories-bar-section');
+          else if (tab === 'categories' || tab === 'shop' || tab === 'home') window.scrollTo({ top: 0, behavior: 'smooth' });
           else if (tab === 'shop') scrollToSection('featured-products-section');
           else if (tab === 'home') window.scrollTo({ top: 0, behavior: 'smooth' });
         }}

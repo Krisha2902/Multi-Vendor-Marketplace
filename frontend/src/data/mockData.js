@@ -515,3 +515,131 @@ export const SHOP_CATALOG_PRODUCTS = [
     description: 'Cold-pressed botanical serum enriched with rosehip seed oil and vitamin C for radiant dewy skin.'
   }
 ];
+
+export const EXPLORE_CATEGORIES = [
+  {
+    id: 'fashion',
+    name: 'Fashion',
+    count: '1.2k+ Products',
+    image: 'https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?auto=format&fit=crop&w=800&q=80',
+    description: 'Apparel, footwear & curated lifestyle essentials'
+  },
+  {
+    id: 'home',
+    name: 'Home & Living',
+    count: '960+ Products',
+    image: 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=800&q=80',
+    description: 'Furniture, decor, lighting & cosy interior accents'
+  },
+  {
+    id: 'beauty',
+    name: 'Beauty',
+    count: '760+ Products',
+    image: 'https://images.unsplash.com/photo-1598440947619-2c35fc9aa908?auto=format&fit=crop&w=800&q=80',
+    description: 'Skincare, haircare, wellness & signature fragrances'
+  },
+  {
+    id: 'electronics',
+    name: 'Electronics',
+    count: '1.5k+ Products',
+    image: 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&w=800&q=80',
+    description: 'Smart tech, wearables, audio gear & computing'
+  },
+  {
+    id: 'sports',
+    name: 'Sports',
+    count: '540+ Products',
+    image: 'https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?auto=format&fit=crop&w=800&q=80',
+    description: 'Athletic wear, sneakers, gym gear & outdoor essentials'
+  },
+  {
+    id: 'toys',
+    name: 'Toys & Games',
+    count: '680+ Products',
+    image: 'https://images.unsplash.com/photo-1559454403-b8fb88521f11?auto=format&fit=crop&w=800&q=80',
+    description: 'Plush toys, educational games, puzzles & fun finds'
+  },
+  {
+    id: 'books',
+    name: 'Books',
+    count: '420+ Products',
+    image: 'https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&w=800&q=80',
+    description: 'Classics, paperbacks, journals & collector editions'
+  },
+  {
+    id: 'handmade',
+    name: 'Handmade',
+    count: '310+ Products',
+    image: 'https://images.unsplash.com/photo-1578749556568-bc2c40e68b61?auto=format&fit=crop&w=800&q=80',
+    description: 'Artisan pottery, handwoven crafts & bespoke gifts'
+  }
+];
+
+export const POPULAR_CATEGORIES_CIRCLES = [
+  { id: 'fashion', name: 'Fashion', iconName: 'Shirt', bg: '#f1eee7', iconColor: '#5c6352' },
+  { id: 'home', name: 'Home & Living', iconName: 'Home', bg: '#faeee3', iconColor: '#a8623d' },
+  { id: 'beauty', name: 'Beauty', iconName: 'Flower2', bg: '#fbe8ea', iconColor: '#b8546b' },
+  { id: 'electronics', name: 'Electronics', iconName: 'Laptop', bg: '#e8f0f8', iconColor: '#3d6c99' },
+  { id: 'sports', name: 'Sports', iconName: 'Dumbbell', bg: '#e5f3ed', iconColor: '#367c61' },
+  { id: 'toys', name: 'Toys & Games', iconName: 'Gamepad2', bg: '#fdeee7', iconColor: '#ba583a' },
+  { id: 'handmade', name: 'Handmade', iconName: 'Scissors', bg: '#fdf3de', iconColor: '#a67b28' }
+];
+
+export const DISCOVER_MORE_PRODUCTS = [
+  {
+    id: 'disc-1',
+    name: 'Aesthetic Mug',
+    seller: 'UrbanCraft',
+    brand: 'UrbanCraft',
+    price: 499,
+    originalPrice: 699,
+    discount: '29% OFF',
+    rating: 4.8,
+    reviews: '1.2k',
+    category: 'home',
+    image: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=700&q=80',
+    description: 'Speckled ceramic mug with inspiring typography print. Microwavable and dishwasher safe.'
+  },
+  {
+    id: 'disc-2',
+    name: 'Cotton T-Shirt',
+    seller: 'StyleStudio',
+    brand: 'Zara',
+    price: 799,
+    originalPrice: 999,
+    discount: '20% OFF',
+    rating: 4.7,
+    reviews: '856',
+    category: 'fashion',
+    image: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=700&q=80',
+    description: 'Ultra-soft heavy combed cotton t-shirt with ribbed crew neck and relaxed comfort fit.'
+  },
+  {
+    id: 'disc-3',
+    name: 'Mini Plant Pot',
+    seller: 'GreenHome',
+    brand: 'UrbanCraft',
+    price: 399,
+    originalPrice: 599,
+    discount: '33% OFF',
+    rating: 4.8,
+    reviews: '742',
+    category: 'home',
+    image: 'https://images.unsplash.com/photo-1485955900006-10f4d324d411?auto=format&fit=crop&w=700&q=80',
+    description: 'Minimalist glazed white ceramic planter perfect for succulents, herbs and desk decoration.'
+  },
+  {
+    id: 'disc-4',
+    name: 'Wireless Earbuds',
+    seller: 'TechNest',
+    brand: 'Sony',
+    price: 1999,
+    originalPrice: 2999,
+    discount: '33% OFF',
+    rating: 4.7,
+    reviews: '677',
+    category: 'electronics',
+    image: 'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?auto=format&fit=crop&w=700&q=80',
+    description: 'True wireless stereo earbuds with active noise cancellation, deep bass, and fast wireless charging.'
+  }
+];
