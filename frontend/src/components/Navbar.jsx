@@ -56,9 +56,7 @@ export default function Navbar({
     setActiveTab(id);
     setMobileMenuOpen(false);
     
-    if (id === 'shop' || id === 'categories' || id === 'sellers' || id === 'home') {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (

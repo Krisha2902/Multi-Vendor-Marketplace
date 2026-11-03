@@ -5760,3 +5760,694 @@
     height: 160px;
   }
 }
+
+
+/* ==========================================================================
+   ABOUT PAGE STYLES (Screenshot Match)
+   ========================================================================== */
+
+.about-page-container {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 1.25rem 1.5rem 4rem;
+}
+
+.about-breadcrumb-wrap {
+  margin-bottom: 1.5rem;
+}
+
+.about-breadcrumb {
+  display: flex;
+  align-items: center;
+  font-size: 0.88rem;
+  color: #727a6f;
+}
+
+.about-breadcrumb .crumb-link {
+  cursor: pointer;
+  color: #4e564c;
+  transition: color 0.15s;
+}
+
+.about-breadcrumb .crumb-link:hover {
+  color: #cf633a;
+  text-decoration: underline;
+}
+
+.about-breadcrumb .crumb-sep {
+  margin: 0 0.5rem;
+  color: #a4aca0;
+}
+
+.about-breadcrumb .crumb-current {
+  font-weight: 600;
+  color: #1e261f;
+}
+
+/* Hero Section */
+.about-hero-section {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2.5rem;
+  margin-bottom: 3.2rem;
+  background: #fbf8f3;
+  border-radius: 24px;
+  padding: 2.8rem 3.2rem;
+  border: 1px solid #ebe5d8;
+}
+
+.about-hero-left {
+  max-width: 540px;
+}
+
+.about-hero-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: clamp(2.3rem, 4vw, 3.2rem);
+  font-weight: 700;
+  color: #1c241c;
+  line-height: 1.15;
+  margin-bottom: 0.9rem;
+  letter-spacing: -0.5px;
+}
+
+.about-hero-subtitle {
+  font-size: 1.05rem;
+  color: #555f52;
+  line-height: 1.55;
+}
+
+.about-hero-right {
+  display: flex;
+  justify-content: flex-end;
+  flex-shrink: 0;
+}
+
+.about-hero-img-wrap {
+  position: relative;
+  width: 320px;
+  height: 200px;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 12px 30px rgba(34, 45, 34, 0.08);
+  border: 4px solid #ffffff;
+}
+
+.about-hero-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.about-laptop-mockup {
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  width: 155px;
+  height: 100px;
+  background: #e3ded5;
+  border-radius: 8px;
+  padding: 6px 6px 10px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.16);
+  display: flex;
+  flex-direction: column;
+}
+
+.about-laptop-screen {
+  background: #ffffff;
+  border-radius: 5px;
+  flex-grow: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.about-laptop-logo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #233123;
+}
+
+.about-laptop-base {
+  height: 4px;
+  background: #c8c2b7;
+  border-radius: 0 0 6px 6px;
+  margin-top: 3px;
+}
+
+/* Section: Mission & Vision */
+.about-mission-section {
+  margin-bottom: 3.5rem;
+}
+
+.about-mission-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 1.5rem;
+  align-items: stretch;
+}
+
+.about-mission-prose {
+  padding: 1rem 1rem 1rem 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.about-prose-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 2.1rem;
+  font-weight: 700;
+  color: #1c241c;
+  margin-bottom: 0.8rem;
+}
+
+.about-prose-lead {
+  font-size: 0.95rem;
+  color: #4e574c;
+  line-height: 1.6;
+  margin-bottom: 0.85rem;
+}
+
+.about-prose-sub {
+  font-size: 0.95rem;
+  color: #4e574c;
+  line-height: 1.6;
+}
+
+.about-pillar-card {
+  background: #fbf8f3;
+  border: 1px solid #ebe5d8;
+  border-radius: 20px;
+  padding: 2.2rem 1.8rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.about-pillar-icon-wrap {
+  width: 62px;
+  height: 62px;
+  border-radius: 50%;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.1rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+}
+
+.about-pillar-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #1c241c;
+  margin-bottom: 0.6rem;
+}
+
+.about-pillar-desc {
+  font-size: 0.92rem;
+  color: #586154;
+  line-height: 1.55;
+}
+
+/* Section Shared Divider Header */
+.about-section-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.divider-line {
+  flex-grow: 1;
+  height: 1px;
+  background: #ded8cb;
+  max-width: 180px;
+}
+
+.about-divider-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 1.85rem;
+  font-weight: 700;
+  color: #1c241c;
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* Section: Why Choose ShopNest? */
+.about-choose-section {
+  margin-bottom: 4rem;
+}
+
+.about-features-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem;
+}
+
+.about-feature-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 1.25rem 0.75rem;
+}
+
+.about-feature-circle {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: #fbf8f3;
+  border: 1px solid #e8e2d4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.9rem;
+  transition: transform 0.2s, box-shadow 0.2s, background-color 0.2s;
+}
+
+.about-feature-item:hover .about-feature-circle {
+  transform: translateY(-3px);
+  background: #ffffff;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
+}
+
+.about-feature-heading {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 1.12rem;
+  font-weight: 700;
+  color: #1c241c;
+  margin-bottom: 0.25rem;
+}
+
+.about-feature-sub {
+  font-size: 0.85rem;
+  color: #6a7466;
+}
+
+/* Section: Our Story */
+.about-story-section {
+  margin-bottom: 4.5rem;
+}
+
+.about-story-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3rem;
+  align-items: center;
+}
+
+.about-story-visual {
+  position: relative;
+}
+
+.about-story-bag-card {
+  position: relative;
+  height: 320px;
+  border-radius: 22px;
+  overflow: hidden;
+  box-shadow: 0 16px 36px rgba(35, 45, 35, 0.09);
+  border: 1px solid #ede8de;
+}
+
+.about-story-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.about-bag-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(20, 28, 20, 0.45) 0%, transparent 60%);
+  display: flex;
+  align-items: flex-end;
+  padding: 1.8rem;
+}
+
+.about-bag-badge {
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(8px);
+  border-radius: 30px;
+  padding: 0.55rem 1.2rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+}
+
+.about-bag-brand {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-weight: 700;
+  font-size: 1rem;
+  color: #233123;
+}
+
+.about-story-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.about-story-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: #1c241c;
+  margin-bottom: 1rem;
+}
+
+.about-story-p1 {
+  font-size: 0.98rem;
+  color: #4e574c;
+  line-height: 1.6;
+  margin-bottom: 0.9rem;
+}
+
+.about-story-p2 {
+  font-size: 0.98rem;
+  color: #4e574c;
+  line-height: 1.6;
+  margin-bottom: 1.6rem;
+}
+
+.about-journey-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #233123;
+  color: #ffffff;
+  border: none;
+  border-radius: 30px;
+  padding: 0.72rem 1.6rem;
+  font-size: 0.92rem;
+  font-weight: 600;
+  cursor: pointer;
+  align-self: flex-start;
+  transition: all 0.2s;
+}
+
+.about-journey-btn:hover {
+  background: #354735;
+  transform: translateY(-1px);
+}
+
+/* Section: What Makes Us Different */
+.about-different-section {
+  margin-bottom: 4.5rem;
+}
+
+.about-different-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+}
+
+.about-different-card {
+  background: #fbf8f3;
+  border: 1px solid #ebe5d8;
+  border-radius: 20px;
+  padding: 2.2rem 1.8rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  transition: transform 0.22s, box-shadow 0.22s, background-color 0.22s;
+}
+
+.about-different-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 14px 28px rgba(35, 45, 35, 0.08);
+  background: #ffffff;
+}
+
+.about-different-icon-wrap {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.1rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+}
+
+.about-different-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1c241c;
+  margin-bottom: 0.5rem;
+}
+
+.about-different-desc {
+  font-size: 0.9rem;
+  color: #5c6658;
+  line-height: 1.55;
+}
+
+/* Section: ShopNest By The Numbers */
+.about-numbers-section {
+  margin-bottom: 4.5rem;
+}
+
+.about-numbers-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 1.5rem 0;
+}
+
+.about-stat-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.4rem;
+}
+
+.about-stat-number {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 2.3rem;
+  font-weight: 700;
+  color: #1c241c;
+  line-height: 1.1;
+  margin-top: 0.2rem;
+}
+
+.about-stat-label {
+  font-size: 0.88rem;
+  color: #6e776a;
+  font-weight: 500;
+}
+
+.about-stat-divider {
+  width: 1px;
+  height: 50px;
+  background: #e0d9cc;
+}
+
+/* Promotional Banner */
+.about-promo-banner-wrap {
+  margin-bottom: 3.5rem;
+}
+
+.about-promo-banner {
+  background: linear-gradient(135deg, #1b3021 0%, #243e2b 55%, #2e4e37 100%);
+  border-radius: 22px;
+  color: #ffffff;
+  padding: 2.5rem 3rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 16px 36px rgba(27, 48, 33, 0.18);
+}
+
+.about-promo-leaves {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+.about-promo-content {
+  position: relative;
+  z-index: 2;
+  max-width: 560px;
+}
+
+.about-promo-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: clamp(1.8rem, 3.2vw, 2.5rem);
+  font-weight: 700;
+  margin-bottom: 0.4rem;
+}
+
+.about-promo-subtitle {
+  font-size: 1.05rem;
+  color: #d6e4da;
+  margin-bottom: 1.4rem;
+  line-height: 1.45;
+}
+
+.about-promo-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.about-promo-shop-btn {
+  background: #ffffff;
+  color: #1b3021;
+  border: none;
+  border-radius: 30px;
+  padding: 0.65rem 1.6rem;
+  font-size: 0.94rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: transform 0.2s, background-color 0.2s;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+}
+
+.about-promo-shop-btn:hover {
+  transform: translateY(-2px);
+  background: #f5f8f5;
+}
+
+.about-promo-seller-btn {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  border: 1.5px solid rgba(255, 255, 255, 0.45);
+  border-radius: 30px;
+  padding: 0.62rem 1.6rem;
+  font-size: 0.94rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.about-promo-seller-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+.about-promo-gift-wrap {
+  width: 210px;
+  height: 150px;
+  border-radius: 16px;
+  overflow: hidden;
+  position: relative;
+  z-index: 2;
+  flex-shrink: 0;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
+}
+
+.about-promo-gift-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Responsive Breakpoints for About Page */
+@media (max-width: 1080px) {
+  .about-mission-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .about-story-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .about-different-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .about-features-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 860px) {
+  .about-hero-section {
+    flex-direction: column;
+    text-align: center;
+    padding: 2.2rem 1.5rem;
+  }
+
+  .about-hero-left {
+    max-width: 100%;
+  }
+
+  .about-hero-right {
+    justify-content: center;
+  }
+
+  .about-numbers-row {
+    flex-wrap: wrap;
+    gap: 1.5rem;
+  }
+
+  .about-stat-divider {
+    display: none;
+  }
+
+  .about-promo-banner {
+    flex-direction: column;
+    text-align: center;
+    padding: 2rem 1.5rem;
+    gap: 1.5rem;
+  }
+
+  .about-promo-content {
+    max-width: 100%;
+  }
+
+  .about-promo-actions {
+    justify-content: center;
+  }
+
+  .about-promo-gift-wrap {
+    width: 180px;
+    height: 130px;
+  }
+}
+
+@media (max-width: 540px) {
+  .about-features-row {
+    grid-template-columns: 1fr;
+  }
+
+  .about-hero-img-wrap {
+    width: 260px;
+    height: 160px;
+  }
+
+  .about-promo-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .about-promo-shop-btn,
+  .about-promo-seller-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
