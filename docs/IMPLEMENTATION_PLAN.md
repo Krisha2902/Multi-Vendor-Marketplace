@@ -72,11 +72,11 @@ Har din ek **vertical slice** hoga: backend API + usi din frontend integration. 
 **End of day:** Vendor apply karta hai, admin approve karta hai, vendor login karke dashboard dekh sakta hai.
 
 ### Day 3 — Categories aur Products (Vendor side)
-- [ ] Category model + admin CRUD + 8 categories seed
-- [ ] Product model: title, description, price, discount, stock, images, category, vendor
-- [ ] Vendor product CRUD: `POST/PUT/DELETE /vendor/products`, `GET /vendor/products`
-- [ ] Image upload (Cloudinary + multer, ya time kam ho to image URL)
-- [ ] Vendor Dashboard: product list, add, edit, delete
+- [x] Category model + admin CRUD + 8 categories seed
+- [x] Product model: title, description, price, discount, stock, images, category, vendor
+- [x] Vendor product CRUD: `POST/PUT/DELETE /vendor/products`, `GET /vendor/products`
+- [x] Image upload (Cloudinary + multer, ya time kam ho to image URL)
+- [x] Vendor Dashboard: product list, add, edit, delete
 
 **End of day:** Approved vendor apna product add/edit/delete kar sakta hai.
 
