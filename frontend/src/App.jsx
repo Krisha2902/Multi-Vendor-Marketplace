@@ -1,4 +1,10 @@
-import React, { useState, useMemo } from 'react';
+
+import React, {
+  useState,
+  useMemo,
+  useEffect
+} from 'react';
+
 import Navbar from './components/Navbar';
 import HeroSection from './components/HeroSection';
 import CategoriesBar from './components/CategoriesBar';
@@ -25,419 +31,1275 @@ import CheckoutModal from './components/CheckoutModal';
 import AuthModal from './components/AuthModal';
 import Toast from './components/Toast';
 
-import { FEATURED_PRODUCTS, NEW_ARRIVALS, CATEGORIES } from './data/mockData';
+// Real Backend API Services
+import {
+  getPublicProducts,
+  getFeaturedProducts,
+  getNewArrivals,
+  getPublicCategories,
+  getPublicSellers
+} from './api/publicMarketplace';
+
 import './App.css';
 
 export default function App() {
-  // Navigation & Filter States
+
+  // ==========================================
+  // 1. NAVIGATION & FILTER STATES
+  // ==========================================
+
   const [activeTab, setActiveTab] = useState('home');
+
   const [searchQuery, setSearchQuery] = useState('');
+
   const [selectedCategory, setSelectedCategory] = useState(null);
 
-  // Cart & Wishlist States
-  const [cartItems, setCartItems] = useState([
-    {
-      id: 'prod-1',
-      name: 'Floral Midi Dress',
-      seller: 'StyleHaven',
-      price: 1499,
-      image: 'https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?auto=format&fit=crop&w=700&q=80',
-      quantity: 1
-    }
-  ]);
-  const [wishlistIds, setWishlistIds] = useState(['prod-2']);
 
-  // Modals & Drawers States
+  // ==========================================
+  // 2. REAL MARKETPLACE DATA STATES
+  // ==========================================
+
+  const [categories, setCategories] = useState([]);
+
+  const [featuredProducts, setFeaturedProducts] = useState([]);
+
+  const [newArrivalProducts, setNewArrivalProducts] = useState([]);
+
+  const [featuredSellers, setFeaturedSellers] = useState([]);
+
+  const [dataLoading, setDataLoading] = useState(true);
+
+  const [marketplaceLoading, setMarketplaceLoading] = useState(true);
+
+  const [apiError, setApiError] = useState('');
+
+
+  // ==========================================
+  // 3. CART & WISHLIST STATES
+  // ==========================================
+
+  // Removed hardcoded mock cart products
+
+  const [cartItems, setCartItems] = useState([]);
+
+  // Wishlist stores actual MongoDB product IDs
+
+  const [wishlistIds, setWishlistIds] = useState([]);
+
+  // Keep actual product objects for the wishlist drawer,
+  // including products opened from other pages.
+
+  const [wishlistProductMap, setWishlistProductMap] = useState({});
+
+
+  // ==========================================
+  // 4. MODALS & DRAWERS STATES
+  // ==========================================
+
   const [isCartOpen, setIsCartOpen] = useState(false);
+
   const [isWishlistOpen, setIsWishlistOpen] = useState(false);
+
   const [isSellerModalOpen, setIsSellerModalOpen] = useState(false);
+
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+
   const [quickViewProduct, setQuickViewProduct] = useState(null);
+
   const [selectedSeller, setSelectedSeller] = useState(null);
 
-  // Toast Notification State
+
+  // ==========================================
+  // 5. TOAST NOTIFICATION
+  // ==========================================
+
   const [toastMessage, setToastMessage] = useState(null);
 
   const showToast = (msg) => {
     setToastMessage(msg);
+
     setTimeout(() => {
       setToastMessage(null);
     }, 3800);
   };
 
-  // Cart Actions
-  const handleAddToCart = (product) => {
-    const qty = product.quantity || 1;
-    setCartItems((prev) => {
-      const existing = prev.find((item) => item.id === product.id);
-      if (existing) {
-        return prev.map((item) =>
-          item.id === product.id
-            ? { ...item, quantity: item.quantity + qty }
-            : item
+
+  // ==========================================
+  // 6. FETCH CATEGORIES & SELLERS FROM BACKEND
+  // ==========================================
+
+  useEffect(() => {
+
+    let active = true;
+
+    const loadMarketplaceData = async () => {
+
+      try {
+
+        setMarketplaceLoading(true);
+
+        const [
+          categoryData,
+          sellerData
+        ] = await Promise.all([
+
+          getPublicCategories(),
+
+          getPublicSellers()
+
+        ]);
+
+        if (!active) return;
+
+        setCategories(categoryData);
+
+        setFeaturedSellers(sellerData);
+
+      } catch (error) {
+
+        console.error(
+          'Marketplace data loading error:',
+          error
         );
+
+        if (active) {
+
+          setApiError(
+            error.response?.data?.message ||
+            'Unable to load categories and sellers.'
+          );
+
+        }
+
+      } finally {
+
+        if (active) {
+          setMarketplaceLoading(false);
+        }
+
       }
-      return [...prev, { ...product, quantity: qty }];
+
+    };
+
+    loadMarketplaceData();
+
+    return () => {
+      active = false;
+    };
+
+  }, []);
+
+
+  // ==========================================
+  // 7. FETCH PRODUCTS FROM BACKEND
+  // ==========================================
+
+  useEffect(() => {
+
+    let active = true;
+
+    const loadProducts = async () => {
+
+      try {
+
+        setDataLoading(true);
+
+        setApiError('');
+
+        let featured = [];
+
+        let arrivals = [];
+
+        // Search or category selected
+        if (
+          searchQuery.trim() ||
+          selectedCategory
+        ) {
+
+          const params = {
+            page: 1,
+            limit: 50,
+            sort: 'newest'
+          };
+
+          if (searchQuery.trim()) {
+            params.search = searchQuery.trim();
+          }
+
+          if (selectedCategory) {
+            params.category = selectedCategory;
+          }
+
+          const [
+            searchResult,
+            latestResult
+          ] = await Promise.all([
+
+            getPublicProducts(params),
+
+            getNewArrivals({
+              ...params,
+              limit: 8
+            })
+
+          ]);
+
+          featured = searchResult.products || [];
+
+          arrivals = latestResult || [];
+
+        } else {
+
+          // Default homepage products
+
+          const [
+            featuredResult,
+            latestResult
+          ] = await Promise.all([
+
+            getFeaturedProducts({
+              limit: 8
+            }),
+
+            getNewArrivals({
+              limit: 8
+            })
+
+          ]);
+
+          featured = featuredResult || [];
+
+          arrivals = latestResult || [];
+
+        }
+
+        if (!active) return;
+
+        setFeaturedProducts(featured);
+
+        setNewArrivalProducts(arrivals);
+
+      } catch (error) {
+
+        console.error(
+          'Product fetching error:',
+          error
+        );
+
+        if (active) {
+
+          setFeaturedProducts([]);
+
+          setNewArrivalProducts([]);
+
+          setApiError(
+            error.response?.data?.message ||
+            'Unable to load products. Please try again.'
+          );
+
+        }
+
+      } finally {
+
+        if (active) {
+          setDataLoading(false);
+        }
+
+      }
+
+    };
+
+    // Debounce search requests
+    const timer = setTimeout(() => {
+      loadProducts();
+    }, 300);
+
+    return () => {
+
+      active = false;
+
+      clearTimeout(timer);
+
+    };
+
+  }, [searchQuery, selectedCategory]);
+
+
+  // ==========================================
+  // 8. CART ACTIONS
+  // ==========================================
+
+  const handleAddToCart = (product) => {
+
+    const qty = product.quantity || 1;
+
+    setCartItems((prev) => {
+
+      const existing = prev.find(
+        (item) => item.id === product.id
+      );
+
+      if (existing) {
+
+        return prev.map((item) => {
+
+          if (item.id === product.id) {
+
+            return {
+              ...item,
+              quantity: item.quantity + qty
+            };
+
+          }
+
+          return item;
+
+        });
+
+      }
+
+      return [
+        ...prev,
+        {
+          ...product,
+          quantity: qty
+        }
+      ];
+
     });
-    showToast(`"${product.name}" added to cart!`);
+
+    showToast(
+      `"${product.name}" added to cart!`
+    );
+
   };
+
 
   const handleUpdateQuantity = (productId, newQty) => {
+
     if (newQty <= 0) {
+
       handleRemoveFromCart(productId);
+
       return;
+
     }
+
     setCartItems((prev) =>
-      prev.map((item) => (item.id === productId ? { ...item, quantity: newQty } : item))
+      prev.map((item) =>
+        item.id === productId
+          ? {
+              ...item,
+              quantity: newQty
+            }
+          : item
+      )
     );
+
   };
+
 
   const handleRemoveFromCart = (productId) => {
-    setCartItems((prev) => prev.filter((item) => item.id !== productId));
+
+    setCartItems((prev) =>
+      prev.filter((item) => item.id !== productId)
+    );
+
     showToast('Item removed from cart.');
+
   };
 
-  // Wishlist Actions
+
+  // ==========================================
+  // 9. WISHLIST ACTIONS
+  // ==========================================
+
   const handleToggleWishlist = (product) => {
-    if (wishlistIds.includes(product.id)) {
-      setWishlistIds((prev) => prev.filter((id) => id !== product.id));
-      showToast(`Removed "${product.name}" from wishlist.`);
+
+    const productId = product.id;
+
+    if (wishlistIds.includes(productId)) {
+
+      setWishlistIds((prev) =>
+        prev.filter((id) => id !== productId)
+      );
+
+      setWishlistProductMap((prev) => {
+
+        const updated = { ...prev };
+
+        delete updated[productId];
+
+        return updated;
+
+      });
+
+      showToast(
+        `Removed "${product.name}" from wishlist.`
+      );
+
     } else {
-      setWishlistIds((prev) => [...prev, product.id]);
-      showToast(`Saved "${product.name}" to wishlist!`);
+
+      setWishlistIds((prev) => [
+        ...prev,
+        productId
+      ]);
+
+      setWishlistProductMap((prev) => ({
+        ...prev,
+        [productId]: product
+      }));
+
+      showToast(
+        `Saved "${product.name}" to wishlist!`
+      );
+
     }
+
   };
+
 
   const handleMoveToCart = (product) => {
+
     handleAddToCart(product);
-    setWishlistIds((prev) => prev.filter((id) => id !== product.id));
+
+    setWishlistIds((prev) =>
+      prev.filter((id) => id !== product.id)
+    );
+
+    setWishlistProductMap((prev) => {
+
+      const updated = { ...prev };
+
+      delete updated[product.id];
+
+      return updated;
+
+    });
+
   };
 
-  // Filter products based on search and category
-  const allProducts = useMemo(() => [...FEATURED_PRODUCTS, ...NEW_ARRIVALS], []);
+
+  // ==========================================
+  // 10. COMBINED PRODUCT DATA
+  // ==========================================
+
+  const allProducts = useMemo(() => {
+
+    const uniqueProducts = new Map();
+
+    [
+      ...featuredProducts,
+      ...newArrivalProducts
+    ].forEach((product) => {
+
+      uniqueProducts.set(
+        product.id,
+        product
+      );
+
+    });
+
+    return Array.from(
+      uniqueProducts.values()
+    );
+
+  }, [featuredProducts, newArrivalProducts]);
+
+
+  // Wishlist products from actual API records
 
   const wishlistProducts = useMemo(() => {
-    return allProducts.filter((p) => wishlistIds.includes(p.id));
-  }, [allProducts, wishlistIds]);
 
-  const filteredFeatured = useMemo(() => {
-    return FEATURED_PRODUCTS.filter((prod) => {
-      const matchesSearch =
-        !searchQuery ||
-        prod.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        prod.seller.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesCategory =
-        !selectedCategory || prod.category === selectedCategory;
-      return matchesSearch && matchesCategory;
-    });
-  }, [searchQuery, selectedCategory]);
+    return Object.values(wishlistProductMap);
 
-  const filteredNewArrivals = useMemo(() => {
-    return NEW_ARRIVALS.filter((prod) => {
-      const matchesSearch =
-        !searchQuery ||
-        prod.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        prod.seller.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesCategory =
-        !selectedCategory || prod.category === selectedCategory;
-      return matchesSearch && matchesCategory;
-    });
-  }, [searchQuery, selectedCategory]);
+  }, [wishlistProductMap]);
+
+
+  // ==========================================
+  // 11. TOTAL CART COUNT
+  // ==========================================
 
   const totalCartCount = useMemo(() => {
-    return cartItems.reduce((acc, item) => acc + item.quantity, 0);
+
+    return cartItems.reduce(
+      (acc, item) => acc + item.quantity,
+      0
+    );
+
   }, [cartItems]);
 
+
+  // ==========================================
+  // 12. CHECKOUT ACTIONS
+  // ==========================================
+
   const handleCheckoutStart = () => {
+
     setIsCartOpen(false);
+
     setIsCheckoutOpen(true);
+
   };
+
 
   const handleOrderComplete = () => {
+
     setCartItems([]);
-    showToast('Order confirmed! Check your email for delivery updates.');
+
+    showToast(
+      'Order confirmed! Check your email for delivery updates.'
+    );
+
   };
+
+
+  // ==========================================
+  // 13. NEWSLETTER
+  // ==========================================
 
   const handleNewsletterSubscribe = (email) => {
-    showToast(`Thank you for subscribing with ${email}!`);
+
+    showToast(
+      `Thank you for subscribing with ${email}!`
+    );
+
   };
+
+
+  // ==========================================
+  // 14. SCROLL TO SECTION
+  // ==========================================
 
   const scrollToSection = (id) => {
+
     const el = document.getElementById(id);
-    if (el) el.scrollIntoView({ behavior: 'smooth' });
+
+    if (el) {
+
+      el.scrollIntoView({
+        behavior: 'smooth'
+      });
+
+    }
+
   };
 
+
+  // ==========================================
+  // 15. RETURN JSX
+  // ==========================================
+
   return (
+
     <div className="app-root">
-      {/* 1. Top Navbar */}
+
+      {/* ===================================
+          TOP NAVBAR
+      =================================== */}
+
       <Navbar
+
         cartCount={totalCartCount}
+
         wishlistCount={wishlistIds.length}
+
         onOpenCart={() => setIsCartOpen(true)}
+
         onOpenWishlist={() => setIsWishlistOpen(true)}
+
         searchQuery={searchQuery}
+
         setSearchQuery={setSearchQuery}
+
         activeTab={activeTab}
+
         setActiveTab={setActiveTab}
-        onOpenSellerModal={() => setIsSellerModalOpen(true)}
-        onOpenAuthModal={() => setIsAuthModalOpen(true)}
+
+        onOpenSellerModal={() =>
+          setIsSellerModalOpen(true)
+        }
+
+        onOpenAuthModal={() =>
+          setIsAuthModalOpen(true)
+        }
+
       />
 
-      {/* Main Page Content */}
+
+      {/* ===================================
+          MAIN PAGE CONTENT
+      =================================== */}
+
       <main className="main-content">
+
+        {/* ADMIN */}
+
         {activeTab === 'admin' ? (
-          <AdminVendors 
-            onBackToHome={() => setActiveTab('home')} 
-            onShowToast={showToast} 
-          />
-        ) : activeTab === 'vendor-dashboard' ? (
-          <VendorDashboard 
-            onBackToHome={() => setActiveTab('home')} 
-            onShowToast={showToast} 
-          />
-        ) : activeTab === 'shop' ? (
-          <ShopPage
-            wishlistIds={wishlistIds}
-            onToggleWishlist={handleToggleWishlist}
-            onAddToCart={handleAddToCart}
-            onQuickView={(p) => setQuickViewProduct(p)}
-            onNavigateHome={() => {
-              setActiveTab('home');
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-            }}
+
+          <AdminVendors
+
+            onBackToHome={() =>
+              setActiveTab('home')
+            }
+
             onShowToast={showToast}
+
           />
-        ) : activeTab === 'categories' ? (
-          <CategoriesPage
+
+        ) : activeTab === 'vendor-dashboard' ? (
+
+          /* VENDOR DASHBOARD */
+
+          <VendorDashboard
+
+            onBackToHome={() =>
+              setActiveTab('home')
+            }
+
+            onShowToast={showToast}
+
+          />
+
+        ) : activeTab === 'shop' ? (
+
+          /* SHOP PAGE */
+
+          <ShopPage
+
             wishlistIds={wishlistIds}
+
             onToggleWishlist={handleToggleWishlist}
+
             onAddToCart={handleAddToCart}
-            onQuickView={(p) => setQuickViewProduct(p)}
+
+            onQuickView={(p) =>
+              setQuickViewProduct(p)
+            }
+
+            onNavigateHome={() => {
+
+              setActiveTab('home');
+
+              window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+              });
+
+            }}
+
+            onShowToast={showToast}
+
+          />
+
+        ) : activeTab === 'categories' ? (
+
+          /* CATEGORIES PAGE */
+
+          <CategoriesPage
+
+            wishlistIds={wishlistIds}
+
+            onToggleWishlist={handleToggleWishlist}
+
+            onAddToCart={handleAddToCart}
+
+            onQuickView={(p) =>
+              setQuickViewProduct(p)
+            }
+
             onNavigateShop={(catId) => {
+
               if (catId) {
                 setSelectedCategory(catId);
               }
+
               setActiveTab('shop');
-              window.scrollTo({ top: 0, behavior: 'smooth' });
+
+              window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+              });
+
             }}
+
             onNavigateHome={() => {
+
               setActiveTab('home');
-              window.scrollTo({ top: 0, behavior: 'smooth' });
+
+              window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+              });
+
             }}
+
             onShowToast={showToast}
+
           />
+
         ) : activeTab === 'sellers' ? (
+
+          /* SELLERS PAGE */
+
           <SellersPage
-            onSelectSeller={(seller) => setSelectedSeller(seller)}
-            onOpenSellerModal={() => setIsSellerModalOpen(true)}
+
+            onSelectSeller={(seller) =>
+              setSelectedSeller(seller)
+            }
+
+            onOpenSellerModal={() =>
+              setIsSellerModalOpen(true)
+            }
+
             onNavigateHome={() => {
+
               setActiveTab('home');
-              window.scrollTo({ top: 0, behavior: 'smooth' });
+
+              window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+              });
+
             }}
+
             onShowToast={showToast}
+
           />
+
         ) : activeTab === 'about' ? (
+
+          /* ABOUT PAGE */
+
           <AboutPage
+
             onNavigateHome={() => {
+
               setActiveTab('home');
-              window.scrollTo({ top: 0, behavior: 'smooth' });
+
+              window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+              });
+
             }}
+
             onNavigateShop={() => {
+
               setActiveTab('shop');
-              window.scrollTo({ top: 0, behavior: 'smooth' });
+
+              window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+              });
+
             }}
-            onOpenSellerModal={() => setIsSellerModalOpen(true)}
+
+            onOpenSellerModal={() =>
+              setIsSellerModalOpen(true)
+            }
+
             onShowToast={showToast}
+
           />
+
         ) : (
+
+          /* ===================================
+             HOMEPAGE
+          =================================== */
+
           <>
-            {/* 2. Hero Section */}
+
+            {/* 1. HERO SECTION */}
+
             <HeroSection
+
               searchQuery={searchQuery}
+
               setSearchQuery={setSearchQuery}
-              onSearchSubmit={() => scrollToSection('featured-products-section')}
+
+              onSearchSubmit={() =>
+                scrollToSection(
+                  'featured-products-section'
+                )
+              }
+
             />
 
-            {/* 3. Category Bar */}
+
+            {/* API ERROR */}
+
+            {apiError && (
+
+              <p
+                role="alert"
+                style={{
+                  color: '#c0392b',
+                  padding: '12px 20px'
+                }}
+              >
+                {apiError}
+              </p>
+
+            )}
+
+
+            {/* 2. CATEGORIES BAR */}
+
             <CategoriesBar
+
+              categories={categories}
+
               selectedCategory={selectedCategory}
+
               onSelectCategory={(catId) => {
+
                 setSelectedCategory(catId);
+
                 if (catId) {
-                  scrollToSection('featured-products-section');
-                  const catObj = CATEGORIES.find((c) => c.id === catId);
-                  showToast(`Showing ${catObj ? catObj.name : ''} products`);
+
+                  scrollToSection(
+                    'featured-products-section'
+                  );
+
+                  const catObj = categories.find(
+                    (c) => c.id === catId
+                  );
+
+                  showToast(
+                    `Showing ${catObj?.name || ''} products`
+                  );
+
                 } else {
-                  showToast('Showing all products');
+
+                  showToast(
+                    'Showing all products'
+                  );
+
                 }
+
               }}
+
             />
 
-            {/* Active Filter Notice */}
+
+            {/* 3. ACTIVE FILTER NOTICE */}
+
             {(searchQuery || selectedCategory) && (
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '0.75rem 1.25rem',
-                marginBottom: '1.5rem',
-                backgroundColor: '#ffffff',
-                borderRadius: '12px',
-                border: '1px solid #ebe5da',
-                fontSize: '0.88rem'
-              }}>
+
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '0.75rem 1.25rem',
+                  marginBottom: '1.5rem',
+                  backgroundColor: '#ffffff',
+                  borderRadius: '12px',
+                  border: '1px solid #ebe5da',
+                  fontSize: '0.88rem'
+                }}
+              >
+
                 <span>
-                  Filtering by: {searchQuery && <strong>"{searchQuery}" </strong>}
-                  {selectedCategory && (
-                    <span className="qv-tag-pill" style={{ marginLeft: '6px' }}>
-                      Category: {CATEGORIES.find((c) => c.id === selectedCategory)?.name}
-                    </span>
+
+                  Filtering by:
+
+                  {searchQuery && (
+                    <strong>
+                      {' '}"{searchQuery}"
+                    </strong>
                   )}
+
+                  {selectedCategory && (
+
+                    <span
+                      className="qv-tag-pill"
+                      style={{
+                        marginLeft: '6px'
+                      }}
+                    >
+                      Category:{' '}
+
+                      {
+                        categories.find(
+                          (c) => c.id === selectedCategory
+                        )?.name
+                      }
+
+                    </span>
+
+                  )}
+
                 </span>
+
+
                 <button
+
                   onClick={() => {
+
                     setSearchQuery('');
+
                     setSelectedCategory(null);
+
                   }}
+
                   style={{
                     fontSize: '0.82rem',
                     color: '#cf633a',
                     fontWeight: '600',
                     textDecoration: 'underline'
                   }}
+
                 >
                   Clear filters
+
                 </button>
+
               </div>
+
             )}
 
-            {/* 4. Featured Products Section */}
+
+            {/* 4. FEATURED PRODUCTS / SEARCH RESULTS */}
+
             <FeaturedProducts
-              products={filteredFeatured.length > 0 ? filteredFeatured : FEATURED_PRODUCTS}
+
+              products={featuredProducts}
+
+              isLoading={dataLoading}
+
+              title={
+                searchQuery.trim() || selectedCategory
+                  ? 'Search Results'
+                  : 'Featured Products'
+              }
+
               wishlistIds={wishlistIds}
+
               onToggleWishlist={handleToggleWishlist}
+
               onAddToCart={handleAddToCart}
-              onQuickView={(p) => setQuickViewProduct(p)}
+
+              onQuickView={(p) =>
+                setQuickViewProduct(p)
+              }
+
               onViewAll={() => {
+
                 setActiveTab('shop');
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-                showToast('Browsing all featured catalog items in Shop');
+
+                window.scrollTo({
+                  top: 0,
+                  behavior: 'smooth'
+                });
+
+                showToast(
+                  'Browsing all products in Shop'
+                );
+
               }}
+
             />
 
-            {/* 5. Featured Sellers Section */}
+
+            {/* 5. FEATURED SELLERS */}
+
             <FeaturedSellers
-              onSelectSeller={(seller) => setSelectedSeller(seller)}
+
+              sellers={featuredSellers}
+
+              isLoading={marketplaceLoading}
+
+              onSelectSeller={(seller) =>
+                setSelectedSeller(seller)
+              }
+
             />
 
-            {/* 6. New Arrivals Section */}
+
+            {/* 6. NEW ARRIVALS */}
+
             <NewArrivals
-              products={filteredNewArrivals.length > 0 ? filteredNewArrivals : NEW_ARRIVALS}
+
+              products={newArrivalProducts}
+
+              isLoading={dataLoading}
+
               wishlistIds={wishlistIds}
+
               onToggleWishlist={handleToggleWishlist}
+
               onAddToCart={handleAddToCart}
-              onQuickView={(p) => setQuickViewProduct(p)}
+
+              onQuickView={(p) =>
+                setQuickViewProduct(p)
+              }
+
               onViewAll={() => {
+
                 setActiveTab('shop');
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-                showToast('Browsing latest arrivals in Shop');
+
+                window.scrollTo({
+                  top: 0,
+                  behavior: 'smooth'
+                });
+
+                showToast(
+                  'Browsing latest arrivals in Shop'
+                );
+
               }}
+
             />
 
-            {/* 7. Join as a Seller Banner */}
+
+            {/* 7. JOIN AS SELLER BANNER */}
+
             <JoinSellerBanner
-              onOpenSellerModal={() => setIsSellerModalOpen(true)}
+
+              onOpenSellerModal={() =>
+                setIsSellerModalOpen(true)
+              }
+
             />
 
-            {/* 8. Why Choose ShopNest? Section */}
+
+            {/* 8. TRUST SECTION */}
+
             <TrustSection />
+
           </>
+
         )}
+
       </main>
 
-      {/* 9. Footer */}
+
+      {/* ===================================
+          FOOTER
+      =================================== */}
+
       <Footer
+
         onSubscribe={handleNewsletterSubscribe}
+
         onNavClick={(tab) => {
+
           setActiveTab(tab);
-          window.scrollTo({ top: 0, behavior: 'smooth' });
+
+          window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+          });
+
         }}
+
       />
 
-      {/* Cart Drawer */}
+
+      {/* ===================================
+          CART DRAWER
+      =================================== */}
+
       <CartDrawer
+
         isOpen={isCartOpen}
-        onClose={() => setIsCartOpen(false)}
+
+        onClose={() =>
+          setIsCartOpen(false)
+        }
+
         cartItems={cartItems}
+
         onUpdateQuantity={handleUpdateQuantity}
+
         onRemoveItem={handleRemoveFromCart}
+
         onCheckout={handleCheckoutStart}
+
       />
 
-      {/* Wishlist Drawer */}
+
+      {/* ===================================
+          WISHLIST DRAWER
+      =================================== */}
+
       <WishlistDrawer
+
         isOpen={isWishlistOpen}
-        onClose={() => setIsWishlistOpen(false)}
+
+        onClose={() =>
+          setIsWishlistOpen(false)
+        }
+
         wishlistItems={wishlistProducts}
+
         onRemoveFromWishlist={(id) => {
-          setWishlistIds((prev) => prev.filter((item) => item !== id));
-          showToast('Removed from wishlist');
+
+          setWishlistIds((prev) =>
+            prev.filter((item) => item !== id)
+          );
+
+          setWishlistProductMap((prev) => {
+
+            const updated = { ...prev };
+
+            delete updated[id];
+
+            return updated;
+
+          });
+
+          showToast(
+            'Removed from wishlist'
+          );
+
         }}
+
         onMoveToCart={handleMoveToCart}
+
       />
 
-      {/* Quick View Modal */}
+
+      {/* ===================================
+          QUICK VIEW MODAL
+      =================================== */}
+
       {quickViewProduct && (
+
         <QuickViewModal
+
           product={quickViewProduct}
-          onClose={() => setQuickViewProduct(null)}
-          isWishlisted={wishlistIds.includes(quickViewProduct.id)}
+
+          onClose={() =>
+            setQuickViewProduct(null)
+          }
+
+          isWishlisted={wishlistIds.includes(
+            quickViewProduct.id
+          )}
+
           onToggleWishlist={handleToggleWishlist}
+
           onAddToCart={handleAddToCart}
+
         />
+
       )}
 
-      {/* Seller Application Modal */}
+
+      {/* ===================================
+          SELLER APPLICATION MODAL
+      =================================== */}
+
       <SellerModal
+
         isOpen={isSellerModalOpen}
-        onClose={() => setIsSellerModalOpen(false)}
+
+        onClose={() =>
+          setIsSellerModalOpen(false)
+        }
+
         onShowToast={showToast}
-        onOpenAuthModal={() => setIsAuthModalOpen(true)}
+
+        onOpenAuthModal={() =>
+          setIsAuthModalOpen(true)
+        }
+
         onGoToVendorDashboard={() => {
+
           setIsSellerModalOpen(false);
+
           setActiveTab('vendor-dashboard');
+
         }}
+
       />
 
-      {/* Seller Detail Showcase Modal */}
+
+      {/* ===================================
+          SELLER DETAIL MODAL
+      =================================== */}
+
       {selectedSeller && (
+
         <SellerDetailModal
+
           seller={selectedSeller}
-          onClose={() => setSelectedSeller(null)}
+
+          onClose={() =>
+            setSelectedSeller(null)
+          }
+
           onAddToCart={handleAddToCart}
-          onQuickView={(p) => setQuickViewProduct(p)}
+
+          onQuickView={(p) =>
+            setQuickViewProduct(p)
+          }
+
           onShowToast={showToast}
+
         />
+
       )}
 
-      {/* Checkout Modal */}
+
+      {/* ===================================
+          CHECKOUT MODAL
+      =================================== */}
+
       <CheckoutModal
+
         isOpen={isCheckoutOpen}
-        onClose={() => setIsCheckoutOpen(false)}
+
+        onClose={() =>
+          setIsCheckoutOpen(false)
+        }
+
         cartItems={cartItems}
+
         onOrderComplete={handleOrderComplete}
+
       />
 
-      {/* Auth Modal (Login / Register) */}
+
+      {/* ===================================
+          AUTH MODAL
+      =================================== */}
+
       <AuthModal
+
         isOpen={isAuthModalOpen}
-        onClose={() => setIsAuthModalOpen(false)}
+
+        onClose={() =>
+          setIsAuthModalOpen(false)
+        }
+
         onShowToast={showToast}
+
       />
 
-      {/* Toast Notification */}
-      <Toast message={toastMessage} onClose={() => setToastMessage(null)} />
+
+      {/* ===================================
+          TOAST NOTIFICATION
+      =================================== */}
+
+      <Toast
+
+        message={toastMessage}
+
+        onClose={() =>
+          setToastMessage(null)
+        }
+
+      />
+
     </div>
+
   );
+
 }
