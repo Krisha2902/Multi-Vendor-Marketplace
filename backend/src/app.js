@@ -5,6 +5,8 @@ import morgan from 'morgan';
 import authRoutes from './routes/auth.routes.js';
 import vendorRoutes from './routes/vendor.routes.js';
 import adminRoutes from './routes/admin.routes.js';
+import categoryRoutes from './routes/category.routes.js';
+import vendorProductRoutes from './routes/vendorProduct.routes.js';
 import { errorHandler } from './middlewares/errorHandler.js';
 
 const app = express();
@@ -21,6 +23,9 @@ app.use('/api/admin', adminRoutes);
 app.get("/", (req, res) => {
     res.send("Multi-Vendor E-commerce Backend is running!");
 });
+app.use('/api/categories', categoryRoutes);
+app.use('/api/vendor/products', vendorProductRoutes);
+
 app.use(errorHandler);
 
 export default app;
