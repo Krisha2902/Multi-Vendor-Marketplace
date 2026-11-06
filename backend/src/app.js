@@ -18,7 +18,9 @@ app.get('/api/health', (req, res) => res.json({ ok: true }));
 app.use('/api/auth', authRoutes);
 app.use('/api/vendors', vendorRoutes);
 app.use('/api/admin', adminRoutes);
-
+app.get("/", (req, res) => {
+    res.send("Multi-Vendor E-commerce Backend is running!");
+});
 app.use(errorHandler);
 
 export default app;
