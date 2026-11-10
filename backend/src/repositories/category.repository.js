@@ -1,3 +1,4 @@
+
 import Category from '../models/Category.js';
 
 export const findAll = async (filter = { isActive: true }) => {
@@ -17,10 +18,13 @@ export const create = async (data) => {
 };
 
 export const update = async (id, data) => {
-  return Category.findByIdAndUpdate(id, data, { new: true, runValidators: true });
+  return Category.findByIdAndUpdate(
+    id,
+    data,
+    { new: true, runValidators: true }
+  );
 };
 
 export const deleteById = async (id) => {
   return Category.findByIdAndDelete(id);
 };
-

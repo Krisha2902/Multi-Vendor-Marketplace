@@ -1,55 +1,112 @@
+
 import React from 'react';
-import { Star, Store, MapPin } from 'lucide-react';
-import { FEATURED_SELLERS } from '../data/mockData';
 
-export default function FeaturedSellers({ onSelectSeller }) {
+import { Star, Store, ArrowRight } from 'lucide-react';
+
+export default function FeaturedSellers({
+  sellers = [],
+  onSelectSeller,
+  isLoading = false,
+}) {
   return (
-    <section className="section-container" id="featured-sellers-section">
+    <section
+      className="section-container"
+      id="featured-sellers-section"
+    >
       <div className="section-header-row">
-        <h2 className="section-title">Featured Sellers</h2>
+        <h2 className="section-title">
+          Featured Sellers
+        </h2>
       </div>
 
-      <div className="sellers-grid">
-        {FEATURED_SELLERS.map((seller) => (
-          <div 
-            key={seller.id} 
-            className="seller-card"
-            onClick={() => onSelectSeller && onSelectSeller(seller)}
-          >
-            {/* Seller Header Info */}
-            <div className="seller-card-header">
-              <div className="seller-avatar-wrap">
-                <img 
-                  src={seller.avatar} 
-                  alt={seller.name} 
-                  className="seller-avatar-img" 
-                />
-              </div>
-              <div className="seller-header-text">
-                <h3 className="seller-name">{seller.name}</h3>
-                <div className="seller-rating-line">
-                  <Star size={14} className="star-icon" fill="#f59e0b" color="#f59e0b" />
-                  <span className="seller-rating-val">{seller.rating}</span>
+      {isLoading ? (
+        <p>Loading sellers...</p>
+      ) : sellers.length === 0 ? (
+        <p>No approved sellers available yet.</p>
+      ) : (
+        <div className="sellers-grid">
+          {sellers.map((seller) => (
+            <div
+              key={seller.id}
+              className="seller-card"
+              role="button"
+              tabIndex={0}
+              onClick={() =>
+                onSelectSeller?.(seller)
+              }
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  onSelectSeller?.(seller);
+                }
+              }}
+            >
+              <div className="seller-card-header">
+                <div
+                  className="seller-avatar-wrap"
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                  }}
+                >
+                  {seller.avatar ? (
+                    <img
+                      src={seller.avatar}
+                      alt={seller.name}
+                      className="seller-avatar-img"
+                    />
+                  ) : (
+                    <Store size={28} />
+                  )}
                 </div>
-              </div>
-            </div>
 
-            {/* Seller 3 Preview Thumbnails */}
-            <div className="seller-thumbnails-row">
-              {seller.thumbnails.map((thumb) => (
-                <div key={thumb.id} className="seller-thumbnail-wrap">
-                  <img 
-                    src={thumb.image} 
-                    alt={thumb.title} 
-                    className="seller-thumb-img" 
-                    loading="lazy" 
-                  />
+                <div className="seller-header-text">
+                  <h3 className="seller-name">
+                    {seller.name}
+                  </h3>
+
+                  <span className="seller-rating-val">
+                    {seller.category}
+                  </span>
                 </div>
-              ))}
+              </div>
+
+              <div className="seller-thumbnails-row">
+                {seller.thumbnails.map((thumb) => (
+                  <div
+                    key={thumb.id}
+                    className="seller-thumbnail-wrap"
+                  >
+                    {thumb.image && (
+                      <img
+                        src={thumb.image}
+                        alt={thumb.title}
+                        className="seller-thumb-img"
+                        loading="lazy"
+                      />
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginTop: '12px',
+                }}
+              >
+                <span>
+                  {seller.productsCount} products
+                </span>
+
+                <ArrowRight size={16} />
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </section>
   );
 }

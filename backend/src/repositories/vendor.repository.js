@@ -17,3 +17,24 @@ export const updateStatus = (id, status, rejectionReason = '') =>
     { status, rejectionReason },
     { new: true }
   ).populate('user', 'name email role');
+// Return approved vendors for public marketplace
+export const findPublicAll = () => {
+  return Vendor.find({ status: 'approved' })
+    .populate('user', 'name')
+    .sort({ createdAt: -1 });
+};
+
+// Return one approved vendor by ID
+export const findPublicById = (id) => {
+  return Vendor.findOne({
+    _id: id,
+    status: 'approved'
+  }).populate('user', 'name');
+};
+
+// Return IDs of approved vendors
+export const findApprovedIds = () => {
+  return Vendor.distinct('_id', {
+    status: 'approved'
+  });
+};
