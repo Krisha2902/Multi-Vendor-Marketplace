@@ -7,6 +7,7 @@ import vendorRoutes from './routes/vendor.routes.js';
 import adminRoutes from './routes/admin.routes.js';
 import categoryRoutes from './routes/category.routes.js';
 import vendorProductRoutes from './routes/vendorProduct.routes.js';
+import orderRoutes from './routes/order.routes.js';
 import { errorHandler } from './middlewares/errorHandler.js';
 
 const app = express();
@@ -22,6 +23,7 @@ app.use('/api/vendors', vendorRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/vendor/products', vendorProductRoutes);
+app.use('/api/orders', orderRoutes);
 
 app.use(errorHandler);
 

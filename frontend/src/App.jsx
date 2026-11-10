@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import Navbar from './components/Navbar';
 import HeroSection from './components/HeroSection';
 import CategoriesBar from './components/CategoriesBar';
@@ -34,18 +34,52 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState(null);
 
-  // Cart & Wishlist States
-  const [cartItems, setCartItems] = useState([
-    {
-      id: 'prod-1',
-      name: 'Floral Midi Dress',
-      seller: 'StyleHaven',
-      price: 1499,
-      image: 'https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?auto=format&fit=crop&w=700&q=80',
-      quantity: 1
+  // Cart & Wishlist States (Persisted in localStorage for Day 5)
+  const [cartItems, setCartItems] = useState(() => {
+    try {
+      const saved = localStorage.getItem('shopnest_cart');
+      if (saved) return JSON.parse(saved);
+    } catch {
+      // Ignore localStorage parse error
     }
-  ]);
-  const [wishlistIds, setWishlistIds] = useState(['prod-2']);
+    return [
+      {
+        id: 'prod-1',
+        name: 'Floral Midi Dress',
+        seller: 'StyleHaven',
+        price: 1499,
+        image: 'https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?auto=format&fit=crop&w=700&q=80',
+        quantity: 1,
+      },
+    ];
+  });
+
+  const [wishlistIds, setWishlistIds] = useState(() => {
+    try {
+      const saved = localStorage.getItem('shopnest_wishlist');
+      if (saved) return JSON.parse(saved);
+    } catch {
+      // Ignore localStorage parse error
+    }
+    return ['prod-2'];
+  });
+
+  // Sync cart & wishlist changes to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('shopnest_cart', JSON.stringify(cartItems));
+    } catch {
+      // Ignore storage write error
+    }
+  }, [cartItems]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('shopnest_wishlist', JSON.stringify(wishlistIds));
+    } catch {
+      // Ignore storage write error
+    }
+  }, [wishlistIds]);
 
   // Modals & Drawers States
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -70,17 +104,17 @@ export default function App() {
   const handleAddToCart = (product) => {
     const qty = product.quantity || 1;
     setCartItems((prev) => {
-      const existing = prev.find((item) => item.id === product.id);
+      const existing = prev.find((item) => (item._id || item.id) === (product._id || product.id));
       if (existing) {
         return prev.map((item) =>
-          item.id === product.id
+          (item._id || item.id) === (product._id || product.id)
             ? { ...item, quantity: item.quantity + qty }
             : item
         );
       }
       return [...prev, { ...product, quantity: qty }];
     });
-    showToast(`"${product.name}" added to cart!`);
+    showToast(`"${product.name || product.title}" added to cart!`);
   };
 
   const handleUpdateQuantity = (productId, newQty) => {
@@ -89,29 +123,31 @@ export default function App() {
       return;
     }
     setCartItems((prev) =>
-      prev.map((item) => (item.id === productId ? { ...item, quantity: newQty } : item))
+      prev.map((item) => ((item._id || item.id) === productId ? { ...item, quantity: newQty } : item))
     );
   };
 
   const handleRemoveFromCart = (productId) => {
-    setCartItems((prev) => prev.filter((item) => item.id !== productId));
+    setCartItems((prev) => prev.filter((item) => (item._id || item.id) !== productId));
     showToast('Item removed from cart.');
   };
 
   // Wishlist Actions
   const handleToggleWishlist = (product) => {
-    if (wishlistIds.includes(product.id)) {
-      setWishlistIds((prev) => prev.filter((id) => id !== product.id));
-      showToast(`Removed "${product.name}" from wishlist.`);
+    const prodId = product._id || product.id;
+    if (wishlistIds.includes(prodId)) {
+      setWishlistIds((prev) => prev.filter((id) => id !== prodId));
+      showToast(`Removed "${product.name || product.title}" from wishlist.`);
     } else {
-      setWishlistIds((prev) => [...prev, product.id]);
-      showToast(`Saved "${product.name}" to wishlist!`);
+      setWishlistIds((prev) => [...prev, prodId]);
+      showToast(`Saved "${product.name || product.title}" to wishlist!`);
     }
   };
 
   const handleMoveToCart = (product) => {
     handleAddToCart(product);
-    setWishlistIds((prev) => prev.filter((id) => id !== product.id));
+    const prodId = product._id || product.id;
+    setWishlistIds((prev) => prev.filter((id) => id !== prodId));
   };
 
   // Filter products based on search and category
@@ -154,9 +190,9 @@ export default function App() {
     setIsCheckoutOpen(true);
   };
 
-  const handleOrderComplete = () => {
+  const handleOrderComplete = (order) => {
     setCartItems([]);
-    showToast('Order confirmed! Check your email for delivery updates.');
+    showToast(`Order #${order?.orderNumber || 'confirmed'} placed successfully! Check your email for delivery updates.`);
   };
 
   const handleNewsletterSubscribe = (email) => {
@@ -427,6 +463,7 @@ export default function App() {
         onClose={() => setIsCheckoutOpen(false)}
         cartItems={cartItems}
         onOrderComplete={handleOrderComplete}
+        onOpenAuthModal={() => setIsAuthModalOpen(true)}
       />
 
       {/* Auth Modal (Login / Register) */}
