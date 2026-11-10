@@ -91,11 +91,11 @@ Har din ek **vertical slice** hoga: backend API + usi din frontend integration. 
 **End of day:** Home page poora real data pe chalta hai.
 
 ### Day 5 — Checkout aur Orders
-- [ ] Order model: customer, items (product, vendor, qty, price, itemStatus), address, paymentMethod, paymentStatus, total, status
-- [ ] `POST /orders`: stock check, price server se, total calculate, stock decrement
-- [ ] Payment simulate (COD / Card / UPI)
-- [ ] Frontend: `CheckoutModal` ko API se jodna
-- [ ] Cart aur wishlist localStorage me persist
+- [x] Order model: customer, items (product, vendor, qty, price, itemStatus), address, paymentMethod, paymentStatus, total, status
+- [x] `POST /orders`: stock check, price server se, total calculate, stock decrement
+- [x] Payment simulate (COD / Card / UPI)
+- [x] Frontend: `CheckoutModal` ko API se jodna
+- [x] Cart aur wishlist localStorage me persist
 
 **End of day:** Customer order place kar sakta hai aur order ID DB se aata hai.
 
