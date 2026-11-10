@@ -336,28 +336,13 @@ export default function App() {
     const qty = product.quantity || 1;
 
     setCartItems((prev) => {
-
-      const existing = prev.find(
-        (item) => item.id === product.id
-      );
-
+      const existing = prev.find((item) => (item._id || item.id) === (product._id || product.id));
       if (existing) {
-
-        return prev.map((item) => {
-
-          if (item.id === product.id) {
-
-            return {
-              ...item,
-              quantity: item.quantity + qty
-            };
-
-          }
-
-          return item;
-
-        });
-
+        return prev.map((item) =>
+          (item._id || item.id) === (product._id || product.id)
+            ? { ...item, quantity: item.quantity + qty }
+            : item
+        );
       }
 
       return [
@@ -369,11 +354,7 @@ export default function App() {
       ];
 
     });
-
-    showToast(
-      `"${product.name}" added to cart!`
-    );
-
+    showToast(`"${product.name || product.title}" added to cart!`);
   };
 
 
@@ -388,25 +369,14 @@ export default function App() {
     }
 
     setCartItems((prev) =>
-      prev.map((item) =>
-        item.id === productId
-          ? {
-              ...item,
-              quantity: newQty
-            }
-          : item
-      )
+      prev.map((item) => ((item._id || item.id) === productId ? { ...item, quantity: newQty } : item))
     );
 
   };
 
 
   const handleRemoveFromCart = (productId) => {
-
-    setCartItems((prev) =>
-      prev.filter((item) => item.id !== productId)
-    );
-
+    setCartItems((prev) => prev.filter((item) => (item._id || item.id) !== productId));
     showToast('Item removed from cart.');
 
   };
@@ -418,7 +388,8 @@ export default function App() {
 
   const handleToggleWishlist = (product) => {
 
-    const productId = product.id;
+    const productId = product._id || product.id;
+  
 
     if (wishlistIds.includes(productId)) {
 
@@ -437,7 +408,7 @@ export default function App() {
       });
 
       showToast(
-        `Removed "${product.name}" from wishlist.`
+        `Removed "${product.name || product.title}" from wishlist.`
       );
 
     } else {
@@ -453,7 +424,7 @@ export default function App() {
       }));
 
       showToast(
-        `Saved "${product.name}" to wishlist!`
+        `Saved "${product.name || product.title}" to wishlist!`
       );
 
     }
@@ -464,19 +435,15 @@ export default function App() {
   const handleMoveToCart = (product) => {
 
     handleAddToCart(product);
+  const productId = product._id || product.id;
+   setWishlistIds((prev) =>
+    prev.filter((id) => id !== productId)
+  );
 
-    setWishlistIds((prev) =>
-      prev.filter((id) => id !== product.id)
-    );
-
-    setWishlistProductMap((prev) => {
-
-      const updated = { ...prev };
-
-      delete updated[product.id];
-
-      return updated;
-
+  setWishlistProductMap((prev) => {
+    const updated = { ...prev };
+    delete updated[productId];
+    return updated;
     });
 
   };
@@ -544,15 +511,9 @@ export default function App() {
 
   };
 
-
-  const handleOrderComplete = () => {
-
+  const handleOrderComplete = (order) => {
     setCartItems([]);
-
-    showToast(
-      'Order confirmed! Check your email for delivery updates.'
-    );
-
+    showToast(`Order #${order?.orderNumber || 'confirmed'} placed successfully! Check your email for delivery updates.`);
   };
 
 
@@ -1254,6 +1215,7 @@ export default function App() {
 
       <CheckoutModal
 
+
         isOpen={isCheckoutOpen}
 
         onClose={() =>
@@ -1264,6 +1226,7 @@ export default function App() {
 
         onOrderComplete={handleOrderComplete}
 
+        onOpenAuthModal={() => setIsAuthModalOpen(true)}
       />
 
 
