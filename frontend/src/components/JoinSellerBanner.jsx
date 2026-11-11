@@ -1,5 +1,3 @@
-import React from 'react';
-
 export default function JoinSellerBanner({ onOpenSellerModal }) {
   return (
     <section className="section-container">

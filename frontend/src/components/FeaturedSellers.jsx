@@ -1,7 +1,5 @@
 
-import React from 'react';
-
-import { Star, Store, ArrowRight } from 'lucide-react';
+import { Store, ArrowRight } from 'lucide-react';
 
 export default function FeaturedSellers({
   sellers = [],

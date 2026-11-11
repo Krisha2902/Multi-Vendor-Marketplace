@@ -22,4 +22,25 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const requestUrl = error.config?.url || '';
+    const isCredentialRequest =
+      requestUrl.includes('/auth/login') || requestUrl.includes('/auth/register');
+
+    if (error.response?.status === 401 && !isCredentialRequest) {
+      try {
+        localStorage.removeItem('token');
+      } catch {
+        // Ignore restricted localStorage access
+      }
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('shopnest:unauthorized'));
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 export default api;

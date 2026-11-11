@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   Heart,
   ShoppingCart,
@@ -41,10 +41,14 @@ export default function ShopPage({
   categories: propCategories = [],
   sellers: propSellers = [],
 }) {
-  const [categories, setCategories] = useState(propCategories);
-  const [sellers, setSellers] = useState(propSellers);
+  const [fetchedCategories, setFetchedCategories] = useState([]);
+  const [fetchedSellers, setFetchedSellers] = useState([]);
+  const categories = propCategories.length > 0 ? propCategories : fetchedCategories;
+  const sellers = propSellers.length > 0 ? propSellers : fetchedSellers;
 
   // Filters State
+  const [prevPropCategory, setPrevPropCategory] = useState(selectedCategory);
+  const [prevPropSearch, setPrevPropSearch] = useState(searchQuery);
   const [heroSearch, setHeroSearch] = useState(searchQuery || '');
   const [appliedSearch, setAppliedSearch] = useState((searchQuery || '').trim());
   const [selectedPill, setSelectedPill] = useState(selectedCategory || 'all');
@@ -57,6 +61,20 @@ export default function ShopPage({
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 12;
 
+  if (selectedCategory !== prevPropCategory) {
+    setPrevPropCategory(selectedCategory);
+    setSelectedPill(selectedCategory || 'all');
+    setSelectedCategories([]);
+    setCurrentPage(1);
+  }
+
+  if (searchQuery !== prevPropSearch) {
+    setPrevPropSearch(searchQuery);
+    setHeroSearch(searchQuery || '');
+    setAppliedSearch((searchQuery || '').trim());
+    setCurrentPage(1);
+  }
+
   // Products & API State
   const [apiProducts, setApiProducts] = useState([]);
   const [serverPagination, setServerPagination] = useState({ totalProducts: 0, totalPages: 1 });
@@ -66,51 +84,30 @@ export default function ShopPage({
   // Newsletter State
   const [newsletterEmail, setNewsletterEmail] = useState('');
 
-  // Keep categories & sellers synced with App or fetch standalone
+  // Fetch filter metadata if not provided by App
   useEffect(() => {
-    if (propCategories.length > 0) setCategories(propCategories);
-  }, [propCategories]);
+    if (propCategories.length > 0 && propSellers.length > 0) return;
 
-  useEffect(() => {
-    if (propSellers.length > 0) setSellers(propSellers);
-  }, [propSellers]);
-
-  useEffect(() => {
     let active = true;
     const loadFilterMetadata = async () => {
       try {
         const [catData, sellerData] = await Promise.all([
-          propCategories.length > 0 ? Promise.resolve(propCategories) : getPublicCategories(),
-          propSellers.length > 0 ? Promise.resolve(propSellers) : getPublicSellers(),
+          propCategories.length > 0 ? Promise.resolve(null) : getPublicCategories(),
+          propSellers.length > 0 ? Promise.resolve(null) : getPublicSellers(),
         ]);
         if (!active) return;
-        setCategories(catData || []);
-        setSellers(sellerData || []);
+        if (catData) setFetchedCategories(catData);
+        if (sellerData) setFetchedSellers(sellerData);
       } catch (err) {
         console.warn('Could not load shop filter options:', err.message);
       }
     };
 
-    if (propCategories.length === 0 || propSellers.length === 0) {
-      loadFilterMetadata();
-    }
+    loadFilterMetadata();
     return () => {
       active = false;
     };
-  }, []);
-
-  // Sync external category/search navigation into ShopPage
-  useEffect(() => {
-    setSelectedPill(selectedCategory || 'all');
-    setSelectedCategories([]);
-    setCurrentPage(1);
-  }, [selectedCategory]);
-
-  useEffect(() => {
-    setHeroSearch(searchQuery || '');
-    setAppliedSearch((searchQuery || '').trim());
-    setCurrentPage(1);
-  }, [searchQuery]);
+  }, [propCategories.length, propSellers.length]);
 
   // Determine single category parameter supported by GET /api/products
   const effectiveCategoryIds = useMemo(() => {
@@ -121,7 +118,6 @@ export default function ShopPage({
 
   const hasClientOnlyFilters =
     selectedCategories.length > 1 ||
-    (selectedPill !== 'all' && selectedCategories.length > 0 && !selectedCategories.includes(selectedPill)) ||
     selectedPriceRanges.length > 0 ||
     minRating !== null ||
     selectedAvailability !== null ||
@@ -146,7 +142,7 @@ export default function ShopPage({
           params.search = appliedSearch;
         }
 
-        if (effectiveCategoryIds.length === 1 && !(selectedPill !== 'all' && selectedCategories.length > 0)) {
+        if (effectiveCategoryIds.length === 1) {
           params.category = effectiveCategoryIds[0];
         }
 
@@ -204,6 +200,7 @@ export default function ShopPage({
   };
 
   const toggleCategory = (id) => {
+    setSelectedPill('all');
     setSelectedCategories((prev) =>
       prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id]
     );
@@ -238,11 +235,7 @@ export default function ShopPage({
     return apiProducts.filter((prod) => {
       const prodCatId = String(prod.category || '');
 
-      if (selectedPill !== 'all' && prodCatId !== String(selectedPill)) {
-        return false;
-      }
-
-      if (selectedCategories.length > 0 && !selectedCategories.includes(prodCatId)) {
+      if (effectiveCategoryIds.length > 0 && !effectiveCategoryIds.includes(prodCatId)) {
         return false;
       }
 
@@ -271,8 +264,7 @@ export default function ShopPage({
   }, [
     apiProducts,
     hasClientOnlyFilters,
-    selectedPill,
-    selectedCategories,
+    effectiveCategoryIds,
     selectedPriceRanges,
     minRating,
     selectedAvailability,
@@ -318,12 +310,21 @@ export default function ShopPage({
     (selectedSeller !== 'All Sellers' ? 1 : 0);
 
   const pageNumbers = useMemo(() => {
+    const maxButtons = 5;
+    if (totalPages <= maxButtons) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+    let start = Math.max(1, currentPage - 2);
+    let end = Math.min(totalPages, start + maxButtons - 1);
+    if (end - start + 1 < maxButtons) {
+      start = Math.max(1, end - maxButtons + 1);
+    }
     const pages = [];
-    for (let i = 1; i <= Math.min(totalPages, 5); i += 1) {
+    for (let i = start; i <= end; i += 1) {
       pages.push(i);
     }
     return pages;
-  }, [totalPages]);
+  }, [totalPages, currentPage]);
 
   return (
     <div className="shop-page-container">
@@ -374,6 +375,7 @@ export default function ShopPage({
             key={pill.id}
             onClick={() => {
               setSelectedPill(pill.id);
+              setSelectedCategories([]);
               setCurrentPage(1);
             }}
             className={`shop-category-pill ${selectedPill === pill.id ? 'active' : ''}`}
@@ -628,7 +630,7 @@ export default function ShopPage({
 
                       <div className="card-rating-row">
                         <Star size={13} className="card-rating-star" />
-                        <span className="card-rating-score">{product.rating || 4.8}</span>
+                        <span className="card-rating-score">{Number(product.rating || 0)}</span>
                         <span className="card-reviews-count">
                           ({product.reviews >= 1000 ? `${(product.reviews / 1000).toFixed(1)}k` : (product.reviews || 0)})
                         </span>

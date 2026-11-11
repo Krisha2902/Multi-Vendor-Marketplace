@@ -1,13 +1,13 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { ShoppingBag, Send } from 'lucide-react';
 
-export default function Footer({ onSubscribe, onNavClick }) {
+export default function Footer({ onSubscribe, onNavClick, onShowToast }) {
   const [email, setEmail] = useState('');
 
   const handleSubscribeSubmit = (e) => {
     e.preventDefault();
     if (!email || !email.includes('@')) {
-      alert('Please enter a valid email address.');
+      if (onShowToast) onShowToast('Please enter a valid email address.');
       return;
     }
     if (onSubscribe) onSubscribe(email);

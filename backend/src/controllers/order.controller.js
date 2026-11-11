@@ -2,7 +2,7 @@ import * as orderService from '../services/order.service.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 
 export const createOrder = asyncHandler(async (req, res) => {
-  const { items, shippingAddress, paymentMethod } = req.body;
+  const { items, shippingAddress, paymentMethod } = req.body || {};
 
   const order = await orderService.placeOrder({
     customerId: req.user._id,
@@ -51,7 +51,7 @@ export const getVendorOrders = asyncHandler(async (req, res) => {
 });
 
 export const updateVendorOrderStatus = asyncHandler(async (req, res) => {
-  const { status, itemId } = req.body;
+  const { status, itemId } = req.body || {};
   const order = await orderService.updateVendorOrderStatus({
     userId: req.user._id,
     orderId: req.params.id,

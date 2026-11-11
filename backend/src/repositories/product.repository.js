@@ -3,21 +3,27 @@
 import Product from '../models/Product.js';
 
 // Find products belonging to a vendor
-export const findByVendor = async (vendorId, filter = {}) => {
-  return Product.find({
+export const findByVendor = async (vendorId, filter = {}, limit = 0) => {
+  const query = Product.find({
     ...filter,
     vendor: vendorId,
   })
-    .populate('category', 'name slug icon')
+    .populate('category', 'name slug icon isActive')
     .populate('vendor', 'shopName category')
     .sort({ createdAt: -1 });
+
+  if (limit > 0) {
+    query.limit(limit);
+  }
+
+  return query;
 };
 
 // Find product by ID
 export const findById = async (id) => {
   return Product.findById(id)
-    .populate('category', 'name slug icon')
-    .populate('vendor', 'shopName category');
+    .populate('category', 'name slug icon isActive')
+    .populate('vendor', 'shopName category status');
 };
 
 // Create product
@@ -49,9 +55,10 @@ export const deleteById = async (id) => {
 };
 
 // Count products belonging to a vendor
-export const countByVendor = async (vendorId) => {
+export const countByVendor = async (vendorId, extraFilter = {}) => {
   return Product.countDocuments({
     vendor: vendorId,
+    ...extraFilter,
   });
 };
 

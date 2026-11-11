@@ -1,6 +1,25 @@
-import React from 'react';
 import { HeartHandshake, ShieldCheck, Globe } from 'lucide-react';
-import { TRUST_POINTS } from '../data/mockData';
+
+const TRUST_POINTS = [
+  {
+    id: 1,
+    title: 'Support Small Businesses',
+    desc: 'Every purchase directly supports independent makers and local entrepreneurs.',
+    icon: 'HeartHandshake'
+  },
+  {
+    id: 2,
+    title: 'Safe & Secure Payments',
+    desc: 'Bank-grade 256-bit SSL encryption and verified checkout gateways.',
+    icon: 'ShieldCheck'
+  },
+  {
+    id: 3,
+    title: 'Worldwide Shipping',
+    desc: 'Fast, insured doorstep delivery with live tracking across all states and abroad.',
+    icon: 'Globe'
+  }
+];
 
 const iconMap = {
   HeartHandshake,

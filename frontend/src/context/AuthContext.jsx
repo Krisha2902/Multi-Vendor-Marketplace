@@ -14,31 +14,50 @@ const safeStorage = {
   setItem: (key, val) => {
     try {
       localStorage.setItem(key, val);
-    } catch {}
+    } catch {
+      // Ignore restricted storage write
+    }
   },
   removeItem: (key) => {
     try {
       localStorage.removeItem(key);
-    } catch {}
+    } catch {
+      // Ignore restricted storage removal
+    }
   }
 };
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => Boolean(safeStorage.getItem('token')));
 
-  // Page refresh par token se user wapas load karo
+  // Page refresh par token se user wapas load karo & listen for 401 expiry
   useEffect(() => {
-    const token = safeStorage.getItem('token');
-    if (!token) {
+    const handleUnauthorized = () => {
+      safeStorage.removeItem('token');
+      setUser(null);
       setLoading(false);
-      return;
+    };
+
+    window.addEventListener('shopnest:unauthorized', handleUnauthorized);
+
+    const token = safeStorage.getItem('token');
+    if (token) {
+      api
+        .get('/auth/me')
+        .then((res) => setUser(res.data?.user || null))
+        .catch((err) => {
+          if (err?.response?.status === 401) {
+            safeStorage.removeItem('token');
+            setUser(null);
+          }
+        })
+        .finally(() => setLoading(false));
     }
-    api
-      .get('/auth/me')
-      .then((res) => setUser(res.data?.user || null))
-      .catch(() => safeStorage.removeItem('token'))
-      .finally(() => setLoading(false));
+
+    return () => {
+      window.removeEventListener('shopnest:unauthorized', handleUnauthorized);
+    };
   }, []);
 
   const login = async (email, password) => {
@@ -79,4 +98,5 @@ export function AuthProvider({ children }) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => useContext(AuthContext);

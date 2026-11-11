@@ -1,17 +1,20 @@
 import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
+import mongoose from 'mongoose';
 import { connectDB } from '../config/db.js';
 import User from '../models/User.js';
 import Vendor from '../models/Vendor.js';
 import Category from '../models/Category.js';
 import Product from '../models/Product.js';
+import Order from '../models/Order.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 const SELLER_PASSWORD = 'Seller@123';
+const CUSTOMER_PASSWORD = 'Customer@123';
 
 const CATEGORY_SELLERS_DATA = [
   {
@@ -401,6 +404,7 @@ const seedDemo = async () => {
 
     let sellersCreated = 0;
     let productsCreated = 0;
+    const seededProducts = [];
 
     for (const entry of CATEGORY_SELLERS_DATA) {
       // 1. Ensure category exists
@@ -443,13 +447,13 @@ const seedDemo = async () => {
 
       // 4. Create products for this vendor & category
       for (const item of entry.products) {
-        const existingProduct = await Product.findOne({
+        let productDoc = await Product.findOne({
           vendor: vendorDoc._id,
           title: item.title,
         });
 
-        if (!existingProduct) {
-          await Product.create({
+        if (!productDoc) {
+          productDoc = await Product.create({
             ...item,
             category: categoryDoc._id,
             vendor: vendorDoc._id,
@@ -458,14 +462,126 @@ const seedDemo = async () => {
           productsCreated += 1;
           console.log(`  + Added product: ${item.title} [${categoryDoc.name} / ${vendorDoc.shopName}]`);
         }
+        seededProducts.push(productDoc);
       }
     }
 
-    console.log(`Done! Sellers created: ${sellersCreated}, Products created: ${productsCreated}`);
-    process.exit(0);
+    // 5. Ensure demo Customer user exists
+    let customerDoc = await User.findOne({ email: 'customer@shopnest.com' });
+    if (!customerDoc) {
+      customerDoc = await User.create({
+        name: 'Aarav Patel',
+        email: 'customer@shopnest.com',
+        password: CUSTOMER_PASSWORD,
+        role: 'customer',
+      });
+      console.log('+ Created demo customer: customer@shopnest.com');
+    }
+
+    // 6. Ensure one pending vendor application exists for Admin workflow demo
+    let pendingUser = await User.findOne({ email: 'pending.seller@shopnest.com' });
+    if (!pendingUser) {
+      pendingUser = await User.create({
+        name: 'Priya Verma',
+        email: 'pending.seller@shopnest.com',
+        password: SELLER_PASSWORD,
+        role: 'customer',
+      });
+    }
+    const existingPendingVendor = await Vendor.findOne({ user: pendingUser._id });
+    if (!existingPendingVendor) {
+      await Vendor.create({
+        user: pendingUser._id,
+        shopName: 'Amber Craft Collective',
+        category: 'Handmade',
+        description: 'Hand-poured soy candles, woven baskets, and artisan table linens ready for review.',
+        status: 'pending',
+      });
+      console.log('+ Created pending vendor application: Amber Craft Collective');
+    }
+
+    // 7. Create sample idempotent multi-vendor orders for Demo dashboard metrics
+    const calcPrice = (prod) =>
+      prod.discount > 0 ? Math.round(prod.price * (1 - prod.discount / 100)) : prod.price;
+
+    if (seededProducts.length >= 4) {
+      const demoOrders = [
+        {
+          orderNumber: 'SN-2026-DEMO01',
+          customer: customerDoc._id,
+          items: [seededProducts[0], seededProducts[3]].map((p, idx) => ({
+            product: p._id,
+            title: p.title,
+            price: calcPrice(p),
+            quantity: 1,
+            image: p.images?.[0] || '',
+            vendor: p.vendor,
+            itemStatus: idx === 0 ? 'delivered' : 'shipped',
+          })),
+          shippingAddress: {
+            fullName: 'Aarav Patel',
+            street: '42 Heritage Courtyard, Navrangpura',
+            city: 'Ahmedabad',
+            postalCode: '380009',
+            phone: '9876543210',
+          },
+          paymentMethod: 'card',
+          paymentStatus: 'paid',
+          status: 'shipped',
+        },
+        {
+          orderNumber: 'SN-2026-DEMO02',
+          customer: customerDoc._id,
+          items: [seededProducts[9] || seededProducts[1]].map((p) => ({
+            product: p._id,
+            title: p.title,
+            price: calcPrice(p),
+            quantity: 1,
+            image: p.images?.[0] || '',
+            vendor: p.vendor,
+            itemStatus: 'processing',
+          })),
+          shippingAddress: {
+            fullName: 'Aarav Patel',
+            street: '42 Heritage Courtyard, Navrangpura',
+            city: 'Ahmedabad',
+            postalCode: '380009',
+            phone: '9876543210',
+          },
+          paymentMethod: 'cod',
+          paymentStatus: 'pending',
+          status: 'processing',
+        },
+      ];
+
+      let ordersCreated = 0;
+      for (const sample of demoOrders) {
+        const exists = await Order.findOne({ orderNumber: sample.orderNumber });
+        if (!exists) {
+          const subtotal = sample.items.reduce((sum, it) => sum + it.price * it.quantity, 0);
+          await Order.create({
+            ...sample,
+            subtotal,
+            shippingFee: 0,
+            totalAmount: subtotal,
+          });
+          ordersCreated += 1;
+        }
+      }
+      if (ordersCreated > 0) {
+        console.log(`+ Created ${ordersCreated} sample marketplace order(s)`);
+      }
+    }
+
+    console.log(`\nDemo seed ready! Sellers created: ${sellersCreated}, Products created: ${productsCreated}`);
+    console.log('Demo Customer : customer@shopnest.com / Customer@123');
+    console.log('Demo Sellers  : fashion.seller@shopnest.com (or any category.seller@shopnest.com) / Seller@123');
+    console.log('Pending Seller: pending.seller@shopnest.com / Seller@123');
   } catch (err) {
     console.error('Demo seed failed:', err.message);
-    process.exit(1);
+    process.exitCode = 1;
+  } finally {
+    await mongoose.disconnect().catch(() => {});
   }
 };
 

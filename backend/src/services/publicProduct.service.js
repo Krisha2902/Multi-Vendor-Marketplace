@@ -17,11 +17,17 @@ const SORT_OPTIONS = {
 
 // Build a safe public product filter
 const buildPublicFilter = async (query, extraFilter = {}) => {
-  const approvedVendorIds = await vendorRepo.findApprovedIds();
+  const [approvedVendorIds, activeCategories] = await Promise.all([
+    vendorRepo.findApprovedIds(),
+    categoryRepo.findAll({ isActive: true }),
+  ]);
+
+  const activeCategoryIds = activeCategories.map((cat) => cat._id);
 
   const filter = {
     isActive: true,
     vendor: { $in: approvedVendorIds },
+    category: { $in: activeCategoryIds },
     ...extraFilter,
   };
 
@@ -45,24 +51,15 @@ const buildPublicFilter = async (query, extraFilter = {}) => {
   // Category may be either MongoDB ObjectId or category slug
   if (query.category) {
     const categoryValue = String(query.category).trim();
+    const category = mongoose.isValidObjectId(categoryValue)
+      ? await categoryRepo.findById(categoryValue)
+      : await categoryRepo.findBySlug(categoryValue.toLowerCase());
 
-    let categoryId;
-
-    if (mongoose.isValidObjectId(categoryValue)) {
-      categoryId = categoryValue;
-    } else {
-      const category = await categoryRepo.findBySlug(
-        categoryValue.toLowerCase()
-      );
-
-      if (!category) {
-        throw new ApiError(404, 'Category not found');
-      }
-
-      categoryId = category._id;
+    if (!category || !category.isActive) {
+      throw new ApiError(404, 'Category not found');
     }
 
-    filter.category = categoryId;
+    filter.category = category._id;
   }
 
   return filter;
@@ -114,7 +111,7 @@ const getProductList = async (
       totalProducts,
       totalPages,
       hasNextPage: page < totalPages,
-      hasPreviousPage: page > 1,
+      hasPreviousPage: totalPages > 0 && page > 1,
     },
   };
 };
@@ -132,7 +129,7 @@ export const getPublicProductById = async (id) => {
 
   const product = await productRepo.findById(id);
 
-  if (!product || !product.isActive) {
+  if (!product || !product.isActive || !product.category || product.category.isActive === false) {
     throw new ApiError(404, 'Product not found');
   }
 

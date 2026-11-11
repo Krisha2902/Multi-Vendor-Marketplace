@@ -1,6 +1,4 @@
 
-import React from 'react';
-
 import {
   Shirt,
   Home,
@@ -11,6 +9,10 @@ import {
   BookOpen,
   Scissors,
   Sparkles,
+  Watch,
+  Tag,
+  ShoppingBag,
+  Utensils,
 } from 'lucide-react';
 
 const iconMap = {
@@ -25,6 +27,10 @@ const iconMap = {
   Gamepad2,
   BookOpen,
   Scissors,
+  Watch,
+  Tag,
+  ShoppingBag,
+  Utensils,
 };
 
 const categoryColors = [

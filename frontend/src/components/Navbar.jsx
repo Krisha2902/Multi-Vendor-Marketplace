@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { 
   ShoppingBag, 
   Search, 
@@ -61,6 +61,22 @@ export default function Navbar({
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const handleSearchChange = (value) => {
+    setSearchQuery(value);
+    if (activeTab !== 'home' && activeTab !== 'shop') {
+      setActiveTab('shop');
+    }
+  };
+
+  const handleLogout = () => {
+    logout();
+    setUserDropdownOpen(false);
+    setMobileMenuOpen(false);
+    if (activeTab === 'admin' || activeTab === 'vendor-dashboard') {
+      setActiveTab('home');
+    }
+  };
+
   return (
     <header className="navbar-container">
       <div className="navbar-inner">
@@ -91,7 +107,7 @@ export default function Navbar({
             type="text"
             placeholder="Search for products, brands and more..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => handleSearchChange(e.target.value)}
             className="navbar-search-input"
           />
           <Search className="navbar-search-icon" size={17} />
@@ -247,10 +263,7 @@ export default function Navbar({
                   <div className="dropdown-divider" />
                   <button
                     className="dropdown-item-btn logout-btn"
-                    onClick={() => {
-                      logout();
-                      setUserDropdownOpen(false);
-                    }}
+                    onClick={handleLogout}
                   >
                     <LogOut size={16} />
                     <span>Log Out</span>
@@ -288,7 +301,7 @@ export default function Navbar({
               type="text"
               placeholder="Search products, sellers..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => handleSearchChange(e.target.value)}
               className="mobile-search-input"
             />
             <Search className="mobile-search-icon" size={18} />
@@ -319,10 +332,7 @@ export default function Navbar({
                 </div>
                 <button
                   className="mobile-logout-btn"
-                  onClick={() => {
-                    logout();
-                    setMobileMenuOpen(false);
-                  }}
+                  onClick={handleLogout}
                 >
                   <LogOut size={16} />
                   <span>Log Out</span>
@@ -381,7 +391,7 @@ export default function Navbar({
               </button>
             )}
 
-            {user?.role !== 'vendor' && (
+            {(!user || user?.role === 'customer') && (
               <button 
                 className="mobile-seller-btn"
                 onClick={() => {

@@ -1,4 +1,3 @@
-import React from 'react';
 import { X, Heart, ShoppingCart, Trash2 } from 'lucide-react';
 
 export default function WishlistDrawer({ 

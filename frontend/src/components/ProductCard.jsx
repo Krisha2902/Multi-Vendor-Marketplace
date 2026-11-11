@@ -1,4 +1,3 @@
-import React from 'react';
 import { Heart, Star, ShoppingCart, Eye } from 'lucide-react';
 
 export default function ProductCard({ 
@@ -9,16 +8,20 @@ export default function ProductCard({
   onQuickView 
 }) {
   const {
-    id,
     name,
     seller,
     price,
+    originalPrice,
+    discount,
+    stock,
     rating,
     reviews,
     badge,
     badgeType,
     image
   } = product;
+
+  const isOutOfStock = Number(stock) === 0;
 
   return (
     <div className="product-card">
@@ -32,11 +35,13 @@ export default function ProductCard({
         />
 
         {/* Top-Left Badge if available */}
-        {badge && (
+        {isOutOfStock ? (
+          <span className="product-badge badge-out">Out of Stock</span>
+        ) : badge ? (
           <span className={`product-badge badge-${badgeType || 'default'}`}>
             {badge}
           </span>
-        )}
+        ) : null}
 
         {/* Top-Right Wishlist Heart Button */}
         <button
@@ -66,11 +71,12 @@ export default function ProductCard({
           </button>
           <button 
             className="hover-action-pill primary"
+            disabled={isOutOfStock}
             onClick={() => onAddToCart(product)}
-            title="Add to basket"
+            title={isOutOfStock ? 'Out of stock' : 'Add to basket'}
           >
             <ShoppingCart size={15} />
-            <span>Add to Cart</span>
+            <span>{isOutOfStock ? 'Out of Stock' : 'Add to Cart'}</span>
           </button>
         </div>
       </div>
@@ -96,7 +102,13 @@ export default function ProductCard({
         </p>
 
         <div className="product-price-row">
-          <span className="product-price">₹{price.toLocaleString('en-IN')}</span>
+          <span className="product-price">₹{Number(price || 0).toLocaleString('en-IN')}</span>
+          {originalPrice && (
+            <span className="card-price-original">₹{Number(originalPrice).toLocaleString('en-IN')}</span>
+          )}
+          {Number(discount) > 0 && (
+            <span className="card-discount-badge">{discount}% OFF</span>
+          )}
         </div>
 
         <div className="product-rating-row">

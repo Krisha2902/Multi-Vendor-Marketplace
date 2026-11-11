@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, useCallback } from 'react';
 import {
   Heart,
   Star,
@@ -15,6 +15,10 @@ import {
   BookOpen,
   Scissors,
   Sparkles,
+  Watch,
+  Tag,
+  ShoppingBag,
+  Utensils,
 } from 'lucide-react';
 import { getPublicCategories, getPublicProducts } from '../api/publicMarketplace';
 
@@ -30,6 +34,10 @@ const ICON_COMPONENTS = {
   BookOpen,
   Scissors,
   Sparkles,
+  Watch,
+  Tag,
+  ShoppingBag,
+  Utensils,
 };
 
 const CATEGORY_COLORS = [
@@ -57,43 +65,40 @@ export default function CategoriesPage({
   onShowToast
 }) {
   const sliderRef = useRef(null);
-  const [categories, setCategories] = useState(propCategories);
+  const [fetchedCategories, setFetchedCategories] = useState([]);
+  const categories = propCategories.length > 0 ? propCategories : fetchedCategories;
   const [discoverProducts, setDiscoverProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [favoriteCategoryIds, setFavoriteCategoryIds] = useState([]);
 
-  useEffect(() => {
-    if (propCategories.length > 0) {
-      setCategories(propCategories);
+  const loadCategoriesPageData = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError('');
+      const [catList, productRes] = await Promise.all([
+        propCategories.length > 0 ? Promise.resolve(propCategories) : getPublicCategories(),
+        getPublicProducts({ page: 1, limit: 4, sort: 'popular' }),
+      ]);
+
+      if (propCategories.length === 0) {
+        setFetchedCategories(catList || []);
+      }
+      setDiscoverProducts(productRes?.products || []);
+    } catch (err) {
+      console.error('Failed to load categories page data:', err);
+      setError(err.response?.data?.message || 'Unable to load categories right now.');
+    } finally {
+      setLoading(false);
     }
   }, [propCategories]);
 
   useEffect(() => {
-    let active = true;
-
-    const loadCategoriesPageData = async () => {
-      try {
-        setLoading(true);
-        const [catList, productRes] = await Promise.all([
-          propCategories.length > 0 ? Promise.resolve(propCategories) : getPublicCategories(),
-          getPublicProducts({ page: 1, limit: 4, sort: 'popular' }),
-        ]);
-
-        if (!active) return;
-        setCategories(catList || []);
-        setDiscoverProducts(productRes?.products || []);
-      } catch (err) {
-        console.error('Failed to load categories page data:', err);
-      } finally {
-        if (active) setLoading(false);
-      }
-    };
-
-    loadCategoriesPageData();
-    return () => {
-      active = false;
-    };
-  }, []);
+    const timer = setTimeout(() => {
+      loadCategoriesPageData();
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [loadCategoriesPageData]);
 
   const toggleCategoryFavorite = (e, catId) => {
     e.stopPropagation();
@@ -159,6 +164,18 @@ export default function CategoriesPage({
       <section className="cat-cards-section">
         {loading && categories.length === 0 ? (
           <p className="empty-state">Loading categories...</p>
+        ) : error && categories.length === 0 ? (
+          <div className="empty-state" style={{ color: '#b91c1c' }}>
+            <p>{error}</p>
+            <button
+              type="button"
+              className="btn-add-product"
+              style={{ marginTop: '0.75rem' }}
+              onClick={loadCategoriesPageData}
+            >
+              Retry
+            </button>
+          </div>
         ) : categories.length === 0 ? (
           <p className="empty-state">No categories available yet.</p>
         ) : (
@@ -341,19 +358,19 @@ export default function CategoriesPage({
                 return (
                   <div key={prodId} className="shop-product-card cat-discover-card">
                     <div
-                      className="shop-product-img-wrap"
+                      className="card-image-wrap"
                       onClick={() => onQuickView && onQuickView(prod)}
                       style={{ cursor: 'pointer' }}
                     >
                       <img
                         src={prod.image}
                         alt={prod.name}
-                        className="shop-product-img"
+                        className="card-product-img"
                         loading="lazy"
                       />
                       <button
                         type="button"
-                        className={`shop-wishlist-btn ${isWishlisted ? 'is-active' : ''}`}
+                        className={`card-wishlist-btn ${isWishlisted ? 'is-active' : ''}`}
                         onClick={(e) => {
                           e.stopPropagation();
                           if (onToggleWishlist) onToggleWishlist(prod);
@@ -368,35 +385,35 @@ export default function CategoriesPage({
                       </button>
                     </div>
 
-                    <div className="shop-product-info">
+                    <div className="card-info-wrap">
                       <h4
-                        className="shop-product-name"
+                        className="card-product-name"
                         onClick={() => onQuickView && onQuickView(prod)}
                         style={{ cursor: 'pointer' }}
                       >
                         {prod.name}
                       </h4>
-                      <span className="shop-product-seller">by {prod.seller}</span>
+                      <span className="card-seller-name">by {prod.seller}</span>
 
-                      <div className="shop-product-rating">
-                        <Star size={13} fill="#d97706" color="#d97706" />
-                        <span className="shop-rating-val">{prod.rating || 4.8}</span>
-                        <span className="shop-rating-count">({prod.reviews || 0})</span>
+                      <div className="card-rating-row">
+                        <Star size={13} className="card-rating-star" fill="#d97706" color="#d97706" />
+                        <span className="card-rating-score">{Number(prod.rating || 0)}</span>
+                        <span className="card-reviews-count">({prod.reviews || 0})</span>
                       </div>
 
-                      <div className="shop-product-pricing">
-                        <span className="shop-current-price">₹{Number(prod.price || 0).toLocaleString('en-IN')}</span>
+                      <div className="card-price-row">
+                        <span className="card-price-current">₹{Number(prod.price || 0).toLocaleString('en-IN')}</span>
                         {prod.originalPrice && (
-                          <span className="shop-original-price">₹{Number(prod.originalPrice).toLocaleString('en-IN')}</span>
+                          <span className="card-price-original">₹{Number(prod.originalPrice).toLocaleString('en-IN')}</span>
                         )}
                         {Number(prod.discount) > 0 && (
-                          <span className="shop-discount-pill">{prod.discount}% OFF</span>
+                          <span className="card-discount-badge">{prod.discount}% OFF</span>
                         )}
                       </div>
 
                       <button
                         type="button"
-                        className="shop-add-cart-btn"
+                        className="card-add-cart-btn"
                         disabled={prod.stock === 0}
                         onClick={() => onAddToCart && onAddToCart(prod)}
                       >

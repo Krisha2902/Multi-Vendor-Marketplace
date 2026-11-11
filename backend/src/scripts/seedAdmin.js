@@ -1,22 +1,37 @@
 import 'dotenv/config';
 import mongoose from 'mongoose';
+import { connectDB } from '../config/db.js';
 import User from '../models/User.js';
 
-await mongoose.connect(process.env.MONGO_URI);
+const seedAdmin = async () => {
+  const email = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+  const password = process.env.ADMIN_PASSWORD;
 
-const email = process.env.ADMIN_EMAIL.toLowerCase();
-const existing = await User.findOne({ email });
+  if (!email || !password) {
+    throw new Error('ADMIN_EMAIL and ADMIN_PASSWORD must be set in backend/.env');
+  }
 
-if (existing) {
-  console.log('Admin already exists');
-} else {
-  await User.create({
-    name: 'Admin',
-    email,
-    password: process.env.ADMIN_PASSWORD,
-    role: 'admin',
+  await connectDB();
+
+  const existing = await User.findOne({ email });
+  if (existing) {
+    console.log('Admin already exists:', email);
+  } else {
+    await User.create({
+      name: 'Admin',
+      email,
+      password,
+      role: 'admin',
+    });
+    console.log('Admin created:', email);
+  }
+};
+
+seedAdmin()
+  .catch((err) => {
+    console.error('Admin seed failed:', err.message);
+    process.exitCode = 1;
+  })
+  .finally(async () => {
+    await mongoose.disconnect().catch(() => {});
   });
-  console.log('Admin created:', email);
-}
-
-await mongoose.disconnect();

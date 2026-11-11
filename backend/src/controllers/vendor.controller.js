@@ -2,7 +2,7 @@ import * as vendorService from '../services/vendor.service.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 
 export const apply = asyncHandler(async (req, res) => {
-  const { shopName, category, description } = req.body;
+  const { shopName, category, description } = req.body || {};
   const vendor = await vendorService.applyVendor({
     userId: req.user._id,
     shopName,

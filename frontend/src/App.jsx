@@ -1,9 +1,11 @@
 
-import React, {
+import {
   useState,
   useMemo,
-  useEffect
+  useEffect,
+  useRef
 } from 'react';
+import { useAuth } from './context/AuthContext';
 
 import Navbar from './components/Navbar';
 import HeroSection from './components/HeroSection';
@@ -44,6 +46,7 @@ import {
 import './App.css';
 
 export default function App() {
+  const { user } = useAuth();
 
   // ==========================================
   // 1. NAVIGATION & FILTER STATES
@@ -73,6 +76,8 @@ export default function App() {
   const [marketplaceLoading, setMarketplaceLoading] = useState(true);
 
   const [apiError, setApiError] = useState('');
+
+  const [marketplaceError, setMarketplaceError] = useState('');
 
 
   // ==========================================
@@ -163,11 +168,19 @@ export default function App() {
   // ==========================================
 
   const [toastMessage, setToastMessage] = useState(null);
+  const toastTimerRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    };
+  }, []);
 
   const showToast = (msg) => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
     setToastMessage(msg);
 
-    setTimeout(() => {
+    toastTimerRef.current = setTimeout(() => {
       setToastMessage(null);
     }, 3800);
   };
@@ -186,6 +199,7 @@ export default function App() {
       try {
 
         setMarketplaceLoading(true);
+        setMarketplaceError('');
 
         const [
           categoryData,
@@ -213,7 +227,7 @@ export default function App() {
 
         if (active) {
 
-          setApiError(
+          setMarketplaceError(
             error.response?.data?.message ||
             'Unable to load categories and sellers.'
           );
@@ -383,14 +397,33 @@ export default function App() {
   const handleAddToCart = (product) => {
     const productId = String(product._id || product.id);
     const productName = product.name || product.title;
-    const qty = product.quantity || 1;
+    const addQty = Number(product.quantity || 1);
+    const availableStock =
+      product.stock !== undefined && product.stock !== null ? Number(product.stock) : null;
+
+    if (availableStock !== null && availableStock <= 0) {
+      showToast(`"${productName}" is currently out of stock.`);
+      return;
+    }
+
+    const existingItem = cartItems.find((item) => String(item._id || item.id) === productId);
+    const currentQty = existingItem ? Number(existingItem.quantity || 0) : 0;
+
+    if (availableStock !== null && currentQty + addQty > availableStock) {
+      showToast(`Only ${availableStock} unit(s) of "${productName}" available in stock.`);
+      return;
+    }
 
     setCartItems((prev) => {
       const existing = prev.find((item) => String(item._id || item.id) === productId);
       if (existing) {
         return prev.map((item) =>
           String(item._id || item.id) === productId
-            ? { ...item, quantity: item.quantity + qty }
+            ? {
+                ...item,
+                stock: availableStock ?? item.stock,
+                quantity: item.quantity + addQty,
+              }
             : item
         );
       }
@@ -401,8 +434,8 @@ export default function App() {
           ...product,
           id: productId,
           name: productName,
-          quantity: qty
-        }
+          quantity: addQty,
+        },
       ];
     });
     showToast(`"${productName}" added to cart!`);
@@ -415,8 +448,19 @@ export default function App() {
       return;
     }
 
+    const targetItem = cartItems.find((item) => String(item._id || item.id) === String(productId));
+    const availableStock =
+      targetItem?.stock !== undefined && targetItem?.stock !== null ? Number(targetItem.stock) : null;
+
+    if (availableStock !== null && newQty > availableStock) {
+      showToast(`Maximum ${availableStock} unit(s) available for "${targetItem?.name || 'this item'}".`);
+      return;
+    }
+
     setCartItems((prev) =>
-      prev.map((item) => (String(item._id || item.id) === String(productId) ? { ...item, quantity: newQty } : item))
+      prev.map((item) =>
+        String(item._id || item.id) === String(productId) ? { ...item, quantity: newQty } : item
+      )
     );
   };
 
@@ -484,33 +528,6 @@ export default function App() {
   };
 
 
-  // ==========================================
-  // 10. COMBINED PRODUCT DATA
-  // ==========================================
-
-  const allProducts = useMemo(() => {
-
-    const uniqueProducts = new Map();
-
-    [
-      ...featuredProducts,
-      ...newArrivalProducts
-    ].forEach((product) => {
-
-      uniqueProducts.set(
-        product.id,
-        product
-      );
-
-    });
-
-    return Array.from(
-      uniqueProducts.values()
-    );
-
-  }, [featuredProducts, newArrivalProducts]);
-
-
   // Wishlist products from actual API records
 
   const wishlistProducts = useMemo(() => {
@@ -518,6 +535,13 @@ export default function App() {
     return Object.values(wishlistProductMap);
 
   }, [wishlistProductMap]);
+
+  // Role-protected view resolution
+  const effectiveTab =
+    (activeTab === 'admin' && user?.role !== 'admin') ||
+    (activeTab === 'vendor-dashboard' && user?.role !== 'vendor')
+      ? 'home'
+      : activeTab;
 
 
   // ==========================================
@@ -610,7 +634,7 @@ export default function App() {
 
         setSearchQuery={setSearchQuery}
 
-        activeTab={activeTab}
+        activeTab={effectiveTab}
 
         setActiveTab={setActiveTab}
 
@@ -637,7 +661,7 @@ export default function App() {
 
         {/* ADMIN */}
 
-        {activeTab === 'admin' ? (
+        {effectiveTab === 'admin' ? (
 
           <AdminVendors
 
@@ -649,7 +673,7 @@ export default function App() {
 
           />
 
-        ) : activeTab === 'vendor-dashboard' ? (
+        ) : effectiveTab === 'vendor-dashboard' ? (
 
           /* VENDOR DASHBOARD */
 
@@ -663,7 +687,7 @@ export default function App() {
 
           />
 
-        ) : activeTab === 'shop' ? (
+        ) : effectiveTab === 'shop' ? (
 
           /* SHOP PAGE */
 
@@ -702,7 +726,7 @@ export default function App() {
 
           />
 
-        ) : activeTab === 'categories' ? (
+        ) : effectiveTab === 'categories' ? (
 
           /* CATEGORIES PAGE */
 
@@ -748,7 +772,7 @@ export default function App() {
 
           />
 
-        ) : activeTab === 'sellers' ? (
+        ) : effectiveTab === 'sellers' ? (
 
           /* SELLERS PAGE */
 
@@ -781,7 +805,7 @@ export default function App() {
 
           />
 
-        ) : activeTab === 'about' ? (
+        ) : effectiveTab === 'about' ? (
 
           /* ABOUT PAGE */
 
@@ -844,7 +868,7 @@ export default function App() {
 
             {/* API ERROR */}
 
-            {apiError && (
+            {(marketplaceError || apiError) && (
 
               <p
                 role="alert"
@@ -853,7 +877,7 @@ export default function App() {
                   padding: '12px 20px'
                 }}
               >
-                {apiError}
+                {marketplaceError || apiError}
               </p>
 
             )}
@@ -1098,6 +1122,8 @@ export default function App() {
       <Footer
 
         onSubscribe={handleNewsletterSubscribe}
+
+        onShowToast={showToast}
 
         onNavClick={(tab) => {
 

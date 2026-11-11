@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { X, Lock, Mail, User, Eye, EyeOff, ShieldCheck, Sparkles, ArrowRight } from 'lucide-react';
+import { useState } from 'react';
+import { X, Lock, Mail, User, Eye, EyeOff, Sparkles, ArrowRight } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export default function AuthModal({ isOpen, onClose, onShowToast }) {
@@ -53,14 +53,6 @@ export default function AuthModal({ isOpen, onClose, onShowToast }) {
     } finally {
       setLoading(false);
     }
-  };
-
-  // Demo auto-fill for testing admin
-  const fillAdminCredentials = () => {
-    setMode('login');
-    setEmail('admin@vendora.com');
-    setPassword('Admin@12345');
-    setError('');
   };
 
   return (
@@ -184,19 +176,6 @@ export default function AuthModal({ isOpen, onClose, onShowToast }) {
               )}
             </button>
           </form>
-
-          {/* Demo Admin Auto-fill Button */}
-          <div className="auth-demo-section">
-            <button
-              type="button"
-              className="demo-autofill-btn"
-              onClick={fillAdminCredentials}
-              title="Click to quickly fill admin credentials"
-            >
-              <ShieldCheck size={15} />
-              <span>Quick Demo: Fill Admin Account</span>
-            </button>
-          </div>
 
           {/* Footer toggle prompt */}
           <div className="auth-modal-footer">

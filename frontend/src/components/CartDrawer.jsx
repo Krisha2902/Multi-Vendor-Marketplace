@@ -1,4 +1,3 @@
-import React from 'react';
 import { X, Trash2, Plus, Minus, ShoppingBag, ArrowRight } from 'lucide-react';
 
 export default function CartDrawer({ 
@@ -12,8 +11,6 @@ export default function CartDrawer({
   if (!isOpen) return null;
 
   const subtotal = cartItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
-  const freeShippingThreshold = 2000;
-  const progressPercent = Math.min(100, Math.round((subtotal / freeShippingThreshold) * 100));
 
   return (
     <div className="drawer-overlay" onClick={onClose}>
@@ -32,14 +29,10 @@ export default function CartDrawer({
         {/* Free Shipping Meter */}
         <div className="cart-shipping-meter">
           <div className="meter-label-row">
-            {subtotal >= freeShippingThreshold ? (
-              <span className="free-shipping-unlocked">🎉 You unlocked <strong>FREE Worldwide Shipping!</strong></span>
-            ) : (
-              <span>Add <strong>₹{(freeShippingThreshold - subtotal).toLocaleString('en-IN')}</strong> more for <strong>FREE Shipping</strong></span>
-            )}
+            <span className="free-shipping-unlocked">🎉 <strong>FREE Standard Delivery</strong> unlocked on all orders!</span>
           </div>
           <div className="meter-track">
-            <div className="meter-fill" style={{ width: `${progressPercent}%` }}></div>
+            <div className="meter-fill" style={{ width: '100%' }}></div>
           </div>
         </div>
 
@@ -89,6 +82,7 @@ export default function CartDrawer({
                         <span className="qty-number">{item.quantity}</span>
                         <button 
                           onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
+                          disabled={item.stock !== undefined && item.stock !== null && Number(item.quantity) >= Number(item.stock)}
                           className="qty-btn"
                           aria-label="Increase quantity"
                         >
@@ -110,7 +104,7 @@ export default function CartDrawer({
               <span className="subtotal-label">Subtotal</span>
               <span className="subtotal-val">₹{subtotal.toLocaleString('en-IN')}</span>
             </div>
-            <p className="subtotal-disclaimer">Taxes and shipping calculated at checkout.</p>
+            <p className="subtotal-disclaimer">Standard delivery is free on all ShopNest orders.</p>
             <button className="checkout-btn" onClick={onCheckout}>
               <span>Proceed to Checkout</span>
               <ArrowRight size={18} />

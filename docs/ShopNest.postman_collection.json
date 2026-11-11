@@ -1,0 +1,402 @@
+{
+  "info": {
+    "name": "ShopNest Multi-Vendor Marketplace API",
+    "description": "Complete REST API collection for ShopNest covering Auth, Public Storefront, Customer Checkout & Orders, Vendor Dashboard, and Admin Control Center.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000/api",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "productId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "categoryId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "vendorId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "orderId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "userId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "1. Health & Auth",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": "{{baseUrl}}/health"
+          }
+        },
+        {
+          "name": "Register Customer",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Riya Mehta\",\n  \"email\": \"riya@example.com\",\n  \"password\": \"Customer@123\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/register"
+          }
+        },
+        {
+          "name": "Login User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const data = pm.response.json();",
+                  "if (data && data.token) {",
+                  "  pm.collectionVariables.set('token', data.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"customer@shopnest.com\",\n  \"password\": \"Customer@123\"\n}"
+            },
+            "url": "{{baseUrl}}/auth/login"
+          }
+        },
+        {
+          "name": "Get Current User Profile",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/auth/me"
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Public Marketplace",
+      "item": [
+        {
+          "name": "List Categories",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": "{{baseUrl}}/categories"
+          }
+        },
+        {
+          "name": "List Public Products",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": "{{baseUrl}}/products?page=1&limit=12&sort=newest"
+          }
+        },
+        {
+          "name": "Get Product Detail",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": "{{baseUrl}}/products/{{productId}}"
+          }
+        },
+        {
+          "name": "List Approved Sellers",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": "{{baseUrl}}/sellers"
+          }
+        },
+        {
+          "name": "Get Seller Storefront",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": "{{baseUrl}}/sellers/{{vendorId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Customer Orders",
+      "item": [
+        {
+          "name": "Place Order",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    {\n      \"productId\": \"{{productId}}\",\n      \"quantity\": 1\n    }\n  ],\n  \"shippingAddress\": {\n    \"fullName\": \"Aarav Patel\",\n    \"street\": \"42 Heritage Courtyard, Navrangpura\",\n    \"city\": \"Ahmedabad\",\n    \"postalCode\": \"380009\",\n    \"phone\": \"9876543210\"\n  },\n  \"paymentMethod\": \"card\"\n}"
+            },
+            "url": "{{baseUrl}}/orders"
+          }
+        },
+        {
+          "name": "Get My Orders",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/orders/my"
+          }
+        },
+        {
+          "name": "Get Order By ID",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/orders/{{orderId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Vendor Portal",
+      "item": [
+        {
+          "name": "Apply As Vendor",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"shopName\": \"Artisan Loom Studio\",\n  \"category\": \"Handmade\",\n  \"description\": \"Handwoven cotton throws and natural-dyed table runners.\"\n}"
+            },
+            "url": "{{baseUrl}}/vendors/apply"
+          }
+        },
+        {
+          "name": "Get My Vendor Profile",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/vendors/me"
+          }
+        },
+        {
+          "name": "List Vendor Products",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/vendor/products"
+          }
+        },
+        {
+          "name": "Create Vendor Product",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Handwoven Cotton Throw Blanket\",\n  \"description\": \"Soft breathable handloom cotton throw finished with knotted tassels.\",\n  \"price\": 1799,\n  \"discount\": 15,\n  \"stock\": 12,\n  \"category\": \"{{categoryId}}\",\n  \"images\": [\n    \"https://images.unsplash.com/photo-1584100936595-c0654b55a2e2?auto=format&fit=crop&w=700&q=80\"\n  ]\n}"
+            },
+            "url": "{{baseUrl}}/vendor/products"
+          }
+        },
+        {
+          "name": "Update Vendor Product",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"price\": 1699,\n  \"stock\": 18\n}"
+            },
+            "url": "{{baseUrl}}/vendor/products/{{productId}}"
+          }
+        },
+        {
+          "name": "Delete Vendor Product",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/vendor/products/{{productId}}"
+          }
+        },
+        {
+          "name": "Get Vendor Orders",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/vendor/orders"
+          }
+        },
+        {
+          "name": "Update Vendor Order Status",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"shipped\"\n}"
+            },
+            "url": "{{baseUrl}}/vendor/orders/{{orderId}}/status"
+          }
+        },
+        {
+          "name": "Get Vendor Stats",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/vendor/stats"
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Admin Control Center",
+      "item": [
+        {
+          "name": "Get Admin Stats",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/admin/stats"
+          }
+        },
+        {
+          "name": "List All Vendors",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/admin/vendors"
+          }
+        },
+        {
+          "name": "Approve Vendor",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/admin/vendors/{{vendorId}}/approve"
+          }
+        },
+        {
+          "name": "Reject Vendor",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Incomplete shop description\"\n}"
+            },
+            "url": "{{baseUrl}}/admin/vendors/{{vendorId}}/reject"
+          }
+        },
+        {
+          "name": "Suspend Vendor",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Temporary policy review\"\n}"
+            },
+            "url": "{{baseUrl}}/admin/vendors/{{vendorId}}/suspend"
+          }
+        },
+        {
+          "name": "Reactivate Vendor",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/admin/vendors/{{vendorId}}/activate"
+          }
+        },
+        {
+          "name": "List All Categories (Admin)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/admin/categories"
+          }
+        },
+        {
+          "name": "Create Category",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Kitchen & Dining\",\n  \"icon\": \"Utensils\",\n  \"description\": \"Tableware, stoneware bowls & artisan kitchen tools\",\n  \"isActive\": true\n}"
+            },
+            "url": "{{baseUrl}}/admin/categories"
+          }
+        },
+        {
+          "name": "Update Category",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"isActive\": true\n}"
+            },
+            "url": "{{baseUrl}}/admin/categories/{{categoryId}}"
+          }
+        },
+        {
+          "name": "Delete Category",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/admin/categories/{{categoryId}}"
+          }
+        },
+        {
+          "name": "Monitor All Orders",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/admin/orders?page=1&limit=12"
+          }
+        },
+        {
+          "name": "List Users",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/admin/users?page=1&limit=15"
+          }
+        },
+        {
+          "name": "Block Or Unblock User",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"isActive\": false\n}"
+            },
+            "url": "{{baseUrl}}/admin/users/{{userId}}/status"
+          }
+        }
+      ]
+    }
+  ]
+}
+

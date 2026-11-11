@@ -21,7 +21,7 @@ export const normalizeProduct = (product) => {
 
     price: Number(
       product.discountedPrice ??
-      originalPrice * (1 - discount / 100)
+      Math.round(originalPrice * (1 - discount / 100))
     ),
 
     originalPrice: discount > 0

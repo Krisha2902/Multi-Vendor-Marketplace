@@ -108,39 +108,39 @@ Har din ek **vertical slice** hoga: backend API + usi din frontend integration. 
 **End of day:** Order ka poora lifecycle chalta hai.
 
 ### Day 7 — Admin Dashboard
-- [ ] `GET /admin/stats`: users, vendors, orders, revenue
-- [ ] Vendors list: suspend / activate
-- [ ] Category management UI
-- [ ] All orders monitor
-- [ ] Users list (optional: block/unblock)
+- [x] `GET /admin/stats`: users, vendors, orders, revenue
+- [x] Vendors list: suspend / activate
+- [x] Category management UI
+- [x] All orders monitor
+- [x] Users list (optional: block/unblock)
 
 **End of day:** Admin flow complete.
 
 ### Day 8 — Validation, Security, Polish
-- [ ] Request validation (zod/joi) sab endpoints pe
-- [ ] Global error handler
-- [ ] Rate limiting (auth routes pe zaroor)
-- [ ] Frontend protected routes (role-based)
-- [ ] Loading, empty, error states
-- [ ] Mobile responsive check
+- [x] Request validation (zod/joi) sab endpoints pe
+- [x] Global error handler
+- [x] Rate limiting (auth routes pe zaroor)
+- [x] Frontend protected routes (role-based)
+- [x] Loading, empty, error states
+- [x] Mobile responsive check
 
 **End of day:** App stable aur secure.
 
 ### Day 9 — Testing aur Demo Data
-- [ ] Poora end-to-end test: Admin → Vendor → Customer
-- [ ] Bug fixing
-- [ ] Demo seed data: 3 vendors, 20-30 products
-- [ ] Postman collection
-- [ ] 2-3 critical API tests (auth, checkout)
+- [ ] Poora end-to-end test: Admin → Vendor → Customer *(live MongoDB Atlas + browser walkthrough pending user run)*
+- [x] Bug fixing
+- [x] Demo seed data: 8 categories, 8 sellers, 22 products, demo customer, pending seller & sample orders (`npm run seed:demo`)
+- [x] Postman collection (`docs/ShopNest.postman_collection.json`)
+- [x] Critical API tests (`backend/tests/api.test.js`: auth, RBAC, checkout stock/rollback, rate limiter)
 
 **End of day:** Demo-ready app.
 
 ### Day 10 — Deploy aur Documentation
-- [ ] Backend deploy (Render/Railway), frontend deploy (Vercel), DB Atlas
-- [ ] Environment variables set karna, CORS production URL ke liye
-- [ ] Final README: setup steps, screenshots, API list
-- [ ] Demo run-through
-- [ ] **Buffer:** naya feature add nahi karna
+- [x] Deployment configs ready (`render.yaml`, `frontend/vercel.json`, `backend/.env.example`, `frontend/.env.example`)
+- [x] Environment variables & CORS setup documented (`CLIENT_URL`, `VITE_API_URL`)
+- [x] Final README (`README.md`) & API Docs (`docs/API_CONTRACTS.md`)
+- [ ] Live deploy + Demo run-through on Atlas/Render/Vercel *(after user pushes & sets live URLs)*
+- [x] **Buffer:** naya feature add nahi karna
 
 **End of day:** Live link + documentation.
 
@@ -201,4 +201,4 @@ backend/
 - [ ] Admin dashboard stats sahi dikha rahe hain
 - [ ] Mobile pe UI theek hai
 - [ ] Live link kaam kar raha hai
-- [ ] README complete hai
+- [x] README complete hai

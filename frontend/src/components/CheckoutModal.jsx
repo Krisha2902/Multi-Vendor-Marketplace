@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { X, CheckCircle, ShieldCheck, CreditCard, AlertCircle, Loader2, LogIn } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
@@ -8,37 +8,27 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, onOrderCompl
   const [step, setStep] = useState('form');
   const [paymentMethod, setPaymentMethod] = useState('card');
   const [address, setAddress] = useState({
-    fullName: 'Arjun Sharma',
-    street: '42 Heritage Lane, Indiranagar',
-    city: 'Bangalore',
-    postalCode: '560038',
-    phone: '9876543210',
+    fullName: null,
+    street: '',
+    city: '',
+    postalCode: '',
+    phone: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [placedOrder, setPlacedOrder] = useState(null);
 
-  // Sync user name if available
-  useEffect(() => {
-    if (user && user.name) {
-      setAddress((prev) => ({
-        ...prev,
-        fullName: prev.fullName === 'Arjun Sharma' ? user.name : prev.fullName,
-      }));
-    }
-  }, [user]);
-
-  // Reset state on open
-  useEffect(() => {
-    if (isOpen) {
-      setStep('form');
-      setError(null);
-      setIsSubmitting(false);
-      setPlacedOrder(null);
-    }
-  }, [isOpen]);
-
   if (!isOpen) return null;
+
+  const effectiveFullName = address.fullName !== null ? address.fullName : (user?.name || '');
+
+  const handleClose = () => {
+    setStep('form');
+    setError(null);
+    setIsSubmitting(false);
+    setPlacedOrder(null);
+    onClose();
+  };
 
   const total = cartItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
 
@@ -55,6 +45,11 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, onOrderCompl
       return;
     }
 
+    if (!effectiveFullName.trim() || !address.street.trim() || !address.city.trim() || !address.postalCode.trim()) {
+      setError('Please complete all required delivery address fields.');
+      return;
+    }
+
     setIsSubmitting(true);
     setError(null);
 
@@ -68,7 +63,10 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, onOrderCompl
           quantity: item.quantity || 1,
           image: item.image,
         })),
-        shippingAddress: address,
+        shippingAddress: {
+          ...address,
+          fullName: effectiveFullName.trim(),
+        },
         paymentMethod,
       };
 
@@ -85,9 +83,9 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, onOrderCompl
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay" onClick={handleClose}>
       <div className="modal-dialog checkout-dialog" onClick={(e) => e.stopPropagation()}>
-        <button className="modal-close-btn" onClick={onClose} aria-label="Close modal">
+        <button className="modal-close-btn" onClick={handleClose} aria-label="Close modal">
           <X size={20} />
         </button>
 
@@ -167,7 +165,8 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, onOrderCompl
                     <input
                       type="text"
                       required
-                      value={address.fullName}
+                      placeholder="Enter recipient's full name"
+                      value={effectiveFullName}
                       onChange={(e) => setAddress({ ...address, fullName: e.target.value })}
                       className="form-input"
                     />
@@ -177,6 +176,7 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, onOrderCompl
                     <input
                       type="text"
                       required
+                      placeholder="House/Flat no., street, locality"
                       value={address.street}
                       onChange={(e) => setAddress({ ...address, street: e.target.value })}
                       className="form-input"
@@ -188,6 +188,7 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, onOrderCompl
                       <input
                         type="text"
                         required
+                        placeholder="City"
                         value={address.city}
                         onChange={(e) => setAddress({ ...address, city: e.target.value })}
                         className="form-input"
@@ -198,11 +199,23 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, onOrderCompl
                       <input
                         type="text"
                         required
+                        placeholder="PIN / Postal code"
                         value={address.postalCode}
                         onChange={(e) => setAddress({ ...address, postalCode: e.target.value })}
                         className="form-input"
                       />
                     </div>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Phone Number</label>
+                    <input
+                      type="tel"
+                      required
+                      placeholder="10-digit mobile number"
+                      value={address.phone}
+                      onChange={(e) => setAddress({ ...address, phone: e.target.value })}
+                      className="form-input"
+                    />
                   </div>
 
                   <h3 className="checkout-section-sub" style={{ marginTop: '1.25rem' }}>
@@ -274,7 +287,7 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, onOrderCompl
                     <button type="submit" className="place-order-btn" disabled={isSubmitting}>
                       {isSubmitting ? (
                         <>
-                          <Loader2 size={18} className="spinner" />
+                          <Loader2 size={18} className="spinning-loader" />
                           <span>Processing Order...</span>
                         </>
                       ) : (
@@ -298,7 +311,7 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, onOrderCompl
           <div className="order-confirmed-state">
             <CheckCircle size={64} className="order-success-icon" />
             <h2>Order Placed Successfully!</h2>
-            <p className="order-conf-num">Order ID: #{placedOrder?.orderNumber || 'SN-2024-8921'}</p>
+            <p className="order-conf-num">Order ID: #{placedOrder?.orderNumber || 'Confirmed'}</p>
 
             <div
               style={{
@@ -336,7 +349,7 @@ export default function CheckoutModal({ isOpen, onClose, cartItems, onOrderCompl
             <p className="order-conf-desc">
               Thank you for shopping with <strong>ShopNest</strong>! Your order has been saved to the database and sent to the artisan vendors.
             </p>
-            <button className="empty-action-btn" onClick={onClose}>
+            <button className="empty-action-btn" onClick={handleClose}>
               Continue Exploring ShopNest
             </button>
           </div>

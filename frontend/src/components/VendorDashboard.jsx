@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { 
-  Store, 
   Package, 
   ShoppingBag, 
   IndianRupee, 
@@ -8,17 +7,12 @@ import {
   Sparkles, 
   PlusCircle, 
   CheckCircle2, 
-  Tag, 
-  Calendar,
   AlertCircle,
   Loader2,
   Edit3,
   Trash2,
   X,
   Search,
-  Image as ImageIcon,
-  Layers,
-  Percent,
   Plus,
   Truck
 } from 'lucide-react';
@@ -32,13 +26,15 @@ const INITIAL_FORM = {
   discount: '0',
   stock: '10',
   category: '',
-  images: ['']
+  images: [''],
+  isActive: true,
 };
 
 export default function VendorDashboard({ onBackToHome, onShowToast }) {
   const { user } = useAuth();
   const [vendorData, setVendorData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [dashboardError, setDashboardError] = useState('');
 
   // Tab State: 'products' | 'orders'
   const [dashboardTab, setDashboardTab] = useState('products');
@@ -74,72 +70,91 @@ export default function VendorDashboard({ onBackToHome, onShowToast }) {
   const [isDeleting, setIsDeleting] = useState(false);
 
   // 1. Fetch vendor data and categories
-  useEffect(() => {
-    const fetchInitialData = async () => {
-      setLoading(true);
-      try {
-        const [vendorRes, catRes] = await Promise.all([
-          api.get('/vendors/me').catch(() => ({ data: { vendor: null } })),
-          api.get('/categories').catch(() => ({ data: { categories: [] } }))
-        ]);
+  const fetchInitialData = useCallback(async () => {
+    setLoading(true);
+    setDashboardError('');
+    try {
+      const [vendorRes, catRes] = await Promise.all([
+        api.get('/vendors/me').catch((err) => {
+          if (err?.response?.status === 404) {
+            return { data: { vendor: null } };
+          }
+          throw err;
+        }),
+        api.get('/categories'),
+      ]);
 
-        setVendorData(vendorRes.data?.vendor || null);
-        setCategories(catRes.data?.categories || []);
-      } catch (err) {
-        if (onShowToast) {
-          onShowToast(err.response?.data?.message || 'Failed to load initial vendor data');
-        }
-      } finally {
-        setLoading(false);
+      setVendorData(vendorRes.data?.vendor || null);
+      setCategories(catRes.data?.categories || []);
+    } catch (err) {
+      const msg = err.response?.data?.message || 'Failed to load initial vendor data';
+      setDashboardError(msg);
+      if (onShowToast) {
+        onShowToast(msg);
       }
-    };
+    } finally {
+      setLoading(false);
+    }
+  }, [onShowToast]);
 
-    fetchInitialData();
-  }, []);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchInitialData();
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [fetchInitialData]);
 
   // 2. Fetch vendor products & stats once vendor is approved
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     setProductsLoading(true);
     try {
       const res = await api.get('/vendor/products');
       setProducts(res.data?.products || []);
     } catch (err) {
-      console.warn('Could not fetch vendor products:', err.message);
+      const msg = err.response?.data?.message || 'Failed to load catalog products';
+      setDashboardError(msg);
+      if (onShowToast) onShowToast(msg);
     } finally {
       setProductsLoading(false);
     }
-  };
+  }, [onShowToast]);
 
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     try {
       const res = await api.get('/vendor/stats');
       if (res.data?.stats) {
         setStats(res.data.stats);
       }
     } catch (err) {
-      console.warn('Could not fetch vendor stats:', err.message);
+      const msg = err.response?.data?.message || 'Failed to load dashboard metrics';
+      setDashboardError((prev) => prev || msg);
     }
-  };
+  }, []);
 
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
     setOrdersLoading(true);
     try {
       const res = await api.get('/vendor/orders');
       setOrders(res.data?.orders || []);
     } catch (err) {
-      console.warn('Could not fetch vendor orders:', err.message);
+      const msg = err.response?.data?.message || 'Failed to load vendor orders';
+      setDashboardError(msg);
+      if (onShowToast) onShowToast(msg);
     } finally {
       setOrdersLoading(false);
     }
-  };
+  }, [onShowToast]);
 
   useEffect(() => {
     if (vendorData && vendorData.status === 'approved') {
-      fetchProducts();
-      fetchStats();
-      fetchOrders();
+      const timer = setTimeout(() => {
+        fetchProducts();
+        fetchStats();
+        fetchOrders();
+      }, 0);
+      return () => clearTimeout(timer);
     }
-  }, [vendorData]);
+  }, [vendorData, fetchProducts, fetchStats, fetchOrders]);
 
   // Order status updater (Day 6)
   const handleUpdateOrderStatus = async (orderId, newStatus) => {
@@ -176,11 +191,12 @@ export default function VendorDashboard({ onBackToHome, onShowToast }) {
     setFormData({
       title: prod.title || '',
       description: prod.description || '',
-      price: prod.price ? String(prod.price) : '',
+      price: prod.price !== undefined && prod.price !== null ? String(prod.price) : '',
       discount: prod.discount !== undefined ? String(prod.discount) : '0',
       stock: prod.stock !== undefined ? String(prod.stock) : '1',
       category: prod.category?._id || prod.category || (categories[0]?._id || ''),
-      images: prod.images && prod.images.length > 0 ? [...prod.images] : ['']
+      images: prod.images && prod.images.length > 0 ? [...prod.images] : [''],
+      isActive: prod.isActive !== false,
     });
     setFormError('');
     setIsModalOpen(true);
@@ -215,8 +231,19 @@ export default function VendorDashboard({ onBackToHome, onShowToast }) {
       setFormError('Please select a product category.');
       return;
     }
-    if (!formData.price || isNaN(formData.price) || Number(formData.price) <= 0) {
-      setFormError('Please enter a valid positive price.');
+    const parsedPrice = Number(formData.price);
+    if (formData.price === '' || !Number.isFinite(parsedPrice) || parsedPrice < 0) {
+      setFormError('Please enter a valid non-negative price.');
+      return;
+    }
+    const parsedDiscount = Number(formData.discount || 0);
+    if (!Number.isFinite(parsedDiscount) || parsedDiscount < 0 || parsedDiscount > 100) {
+      setFormError('Discount must be between 0 and 100.');
+      return;
+    }
+    const parsedStock = Number(formData.stock ?? 0);
+    if (!Number.isInteger(parsedStock) || parsedStock < 0) {
+      setFormError('Stock quantity must be a non-negative integer.');
       return;
     }
 
@@ -231,11 +258,12 @@ export default function VendorDashboard({ onBackToHome, onShowToast }) {
       const payload = {
         title: formData.title.trim(),
         description: formData.description.trim() || formData.title.trim(),
-        price: Number(formData.price),
-        discount: Number(formData.discount || 0),
-        stock: parseInt(formData.stock || 0, 10),
+        price: parsedPrice,
+        discount: parsedDiscount,
+        stock: parsedStock,
         category: formData.category,
-        images: validImages
+        images: validImages,
+        ...(editingProduct ? { isActive: formData.isActive !== false } : {}),
       };
 
       if (editingProduct) {
@@ -295,10 +323,12 @@ export default function VendorDashboard({ onBackToHome, onShowToast }) {
             <span>Marketplace</span>
           </button>
           <div className="vendor-title-wrap">
-            <div className="vendor-approved-badge">
-              <CheckCircle2 size={16} />
-              <span>Verified Seller</span>
-            </div>
+            {vendorData?.status === 'approved' && (
+              <div className="vendor-approved-badge">
+                <CheckCircle2 size={16} />
+                <span>Verified Seller</span>
+              </div>
+            )}
             <h1 className="vendor-heading">
               {vendorData ? vendorData.shopName : 'Vendor Dashboard'}
             </h1>
@@ -317,8 +347,43 @@ export default function VendorDashboard({ onBackToHome, onShowToast }) {
           <Loader2 className="spinning-loader" size={36} />
           <p>Loading your vendor dashboard...</p>
         </div>
+      ) : dashboardError && (!vendorData || vendorData.status !== 'approved') ? (
+        <div className="vendor-loading-state">
+          <AlertCircle size={36} color="#b91c1c" />
+          <p style={{ color: '#b91c1c' }}>{dashboardError}</p>
+          <button className="btn-add-product" onClick={fetchInitialData}>
+            Retry
+          </button>
+        </div>
+      ) : !vendorData || vendorData.status !== 'approved' ? (
+        <div className="vendor-loading-state">
+          <AlertCircle size={36} color="#d97706" />
+          <h3>
+            {vendorData
+              ? vendorData.status === 'suspended'
+                ? 'Store Suspended by Marketplace Admin'
+                : `Store Application Status: ${vendorData.status.toUpperCase()}`
+              : 'No Approved Vendor Store Found'}
+          </h3>
+          <p style={{ maxWidth: '460px', color: '#64748b' }}>
+            {vendorData?.status === 'rejected' && vendorData.rejectionReason
+              ? `Rejection reason: ${vendorData.rejectionReason}`
+              : vendorData?.status === 'suspended' && vendorData.rejectionReason
+                ? `Suspension reason: ${vendorData.rejectionReason}`
+                : 'Only approved seller stores can access product management and order fulfillment.'}
+          </p>
+          <button className="btn-add-product" onClick={onBackToHome}>
+            Back to Marketplace
+          </button>
+        </div>
       ) : (
         <div className="vendor-dashboard-body">
+          {dashboardError && (
+            <div className="form-error-alert" style={{ marginBottom: '1rem' }}>
+              <AlertCircle size={16} />
+              <span>{dashboardError}</span>
+            </div>
+          )}
           {/* Welcome Banner */}
           <div className="vendor-welcome-banner">
             <div className="banner-content">
@@ -341,7 +406,7 @@ export default function VendorDashboard({ onBackToHome, onShowToast }) {
               </div>
               <div className="metric-info">
                 <span className="metric-title">Catalog Products</span>
-                <span className="metric-value">{stats.totalProducts || products.length}</span>
+                <span className="metric-value">{stats.totalProducts ?? products.length}</span>
                 <span className="metric-subtext">Active listings in database</span>
               </div>
             </div>
@@ -352,7 +417,7 @@ export default function VendorDashboard({ onBackToHome, onShowToast }) {
               </div>
               <div className="metric-info">
                 <span className="metric-title">Orders Received</span>
-                <span className="metric-value">{stats.totalOrders || orders.length}</span>
+                <span className="metric-value">{stats.totalOrders ?? orders.length}</span>
                 <span className="metric-subtext">Customer purchases</span>
               </div>
             </div>
@@ -555,7 +620,9 @@ export default function VendorDashboard({ onBackToHome, onShowToast }) {
                           </span>
                         </td>
                         <td>
-                          <span className="table-status-pill active">Published</span>
+                          <span className={`table-status-pill ${prod.isActive === false ? 'out-stock' : 'active'}`}>
+                            {prod.isActive === false ? 'Hidden' : 'Published'}
+                          </span>
                         </td>
                         <td style={{ textAlign: 'right' }}>
                           <div className="table-actions-row">
@@ -660,7 +727,7 @@ export default function VendorDashboard({ onBackToHome, onShowToast }) {
                           <td>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
                               {ord.items?.map((item, idx) => (
-                                <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <div key={item._id || idx} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                   {item.image && (
                                     <img
                                       src={item.image}
@@ -670,6 +737,11 @@ export default function VendorDashboard({ onBackToHome, onShowToast }) {
                                   )}
                                   <span style={{ fontSize: '0.86rem' }}>
                                     {item.title} × <strong>{item.quantity}</strong>
+                                    {item.itemStatus && (
+                                      <span style={{ marginLeft: '0.4rem', fontSize: '0.72rem', color: '#64748b', textTransform: 'uppercase' }}>
+                                        ({item.itemStatus})
+                                      </span>
+                                    )}
                                   </span>
                                 </div>
                               ))}
@@ -685,48 +757,59 @@ export default function VendorDashboard({ onBackToHome, onShowToast }) {
                             </div>
                           </td>
 
-                          <td>
-                            <span style={{
-                              padding: '0.25rem 0.65rem',
-                              borderRadius: '9999px',
-                              fontSize: '0.75rem',
-                              fontWeight: 700,
-                              textTransform: 'uppercase',
-                              background: ord.status === 'delivered' ? '#ecfdf5' : ord.status === 'shipped' ? '#f5f3ff' : ord.status === 'cancelled' ? '#fef2f2' : '#fffbeb',
-                              color: ord.status === 'delivered' ? '#047857' : ord.status === 'shipped' ? '#6d28d9' : ord.status === 'cancelled' ? '#b91c1c' : '#b45309',
-                              border: `1px solid ${ord.status === 'delivered' ? '#a7f3d0' : ord.status === 'shipped' ? '#ddd6fe' : ord.status === 'cancelled' ? '#fecaca' : '#fde68a'}`
-                            }}>
-                              {ord.status}
-                            </span>
-                          </td>
+                          {(() => {
+                            const vendorStatus = ord.vendorStatus || (ord.status === 'confirmed' ? 'pending' : ord.status);
+                            const isTerminal = vendorStatus === 'delivered' || vendorStatus === 'cancelled';
 
-                          <td style={{ textAlign: 'right' }}>
-                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
-                              {updatingOrderId === ord._id ? (
-                                <Loader2 size={18} className="spinner" />
-                              ) : (
-                                <select
-                                  value={ord.status}
-                                  onChange={(e) => handleUpdateOrderStatus(ord._id, e.target.value)}
-                                  style={{
-                                    padding: '0.35rem 0.65rem',
-                                    borderRadius: '6px',
-                                    border: '1px solid #cbd5e1',
-                                    fontSize: '0.85rem',
-                                    fontWeight: 600,
-                                    cursor: 'pointer',
-                                    background: '#ffffff'
-                                  }}
-                                >
-                                  <option value="pending">Pending</option>
-                                  <option value="processing">Processing</option>
-                                  <option value="shipped">Shipped</option>
-                                  <option value="delivered">Delivered</option>
-                                  <option value="cancelled">Cancelled</option>
-                                </select>
-                              )}
-                            </div>
-                          </td>
+                            return (
+                              <>
+                                <td>
+                                  <span style={{
+                                    padding: '0.25rem 0.65rem',
+                                    borderRadius: '9999px',
+                                    fontSize: '0.75rem',
+                                    fontWeight: 700,
+                                    textTransform: 'uppercase',
+                                    background: vendorStatus === 'delivered' ? '#ecfdf5' : vendorStatus === 'shipped' ? '#f5f3ff' : vendorStatus === 'cancelled' ? '#fef2f2' : '#fffbeb',
+                                    color: vendorStatus === 'delivered' ? '#047857' : vendorStatus === 'shipped' ? '#6d28d9' : vendorStatus === 'cancelled' ? '#b91c1c' : '#b45309',
+                                    border: `1px solid ${vendorStatus === 'delivered' ? '#a7f3d0' : vendorStatus === 'shipped' ? '#ddd6fe' : vendorStatus === 'cancelled' ? '#fecaca' : '#fde68a'}`
+                                  }}>
+                                    {vendorStatus}
+                                  </span>
+                                </td>
+
+                                <td style={{ textAlign: 'right' }}>
+                                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    {updatingOrderId === ord._id ? (
+                                      <Loader2 size={18} className="spinning-loader" />
+                                    ) : (
+                                      <select
+                                        value={vendorStatus}
+                                        disabled={isTerminal}
+                                        onChange={(e) => handleUpdateOrderStatus(ord._id, e.target.value)}
+                                        style={{
+                                          padding: '0.35rem 0.65rem',
+                                          borderRadius: '6px',
+                                          border: '1px solid #cbd5e1',
+                                          fontSize: '0.85rem',
+                                          fontWeight: 600,
+                                          cursor: isTerminal ? 'not-allowed' : 'pointer',
+                                          background: isTerminal ? '#f1f5f9' : '#ffffff',
+                                          opacity: isTerminal ? 0.75 : 1,
+                                        }}
+                                      >
+                                        <option value="pending">Pending</option>
+                                        <option value="processing">Processing</option>
+                                        <option value="shipped">Shipped</option>
+                                        <option value="delivered">Delivered</option>
+                                        <option value="cancelled">Cancelled</option>
+                                      </select>
+                                    )}
+                                  </div>
+                                </td>
+                              </>
+                            );
+                          })()}
                         </tr>
                       ))}
                     </tbody>
@@ -831,7 +914,7 @@ export default function VendorDashboard({ onBackToHome, onShowToast }) {
                     placeholder="e.g. 799"
                     value={formData.price}
                     onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                    min="1"
+                    min="0"
                     required
                   />
                 </div>
@@ -847,7 +930,7 @@ export default function VendorDashboard({ onBackToHome, onShowToast }) {
                     value={formData.discount}
                     onChange={(e) => setFormData({ ...formData, discount: e.target.value })}
                     min="0"
-                    max="99"
+                    max="100"
                   />
                 </div>
 

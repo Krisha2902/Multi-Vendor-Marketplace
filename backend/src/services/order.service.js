@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import mongoose from 'mongoose';
 import Product from '../models/Product.js';
 import * as orderRepo from '../repositories/order.repository.js';
@@ -5,71 +6,87 @@ import * as vendorRepo from '../repositories/vendor.repository.js';
 import * as productRepo from '../repositories/product.repository.js';
 import { ApiError } from '../utils/ApiError.js';
 
+const VALID_PAYMENT_METHODS = ['card', 'upi', 'cod'];
+const VALID_ITEM_STATUSES = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
+
+const generateOrderNumber = () => {
+  const token = crypto.randomBytes(3).toString('hex').toUpperCase();
+  return `SN-${new Date().getFullYear()}-${token}`;
+};
+
+const computeVendorOrderStatus = (vendorItems = [], fallbackStatus = 'confirmed') => {
+  if (vendorItems.length === 0) return fallbackStatus;
+  if (vendorItems.every((it) => it.itemStatus === 'cancelled')) return 'cancelled';
+
+  const activeItems = vendorItems.filter((it) => it.itemStatus !== 'cancelled');
+  if (activeItems.every((it) => it.itemStatus === 'delivered')) return 'delivered';
+  if (activeItems.every((it) => it.itemStatus === 'shipped' || it.itemStatus === 'delivered')) return 'shipped';
+  if (activeItems.some((it) => it.itemStatus === 'processing' || it.itemStatus === 'shipped' || it.itemStatus === 'delivered')) {
+    return 'processing';
+  }
+  return 'pending';
+};
+
 export const placeOrder = async ({ customerId, items, shippingAddress, paymentMethod = 'card' }) => {
   if (!items || !Array.isArray(items) || items.length === 0) {
     throw new ApiError(400, 'Order must contain at least one item');
   }
 
-  if (!shippingAddress || !shippingAddress.fullName || !shippingAddress.street || !shippingAddress.city || !shippingAddress.postalCode) {
+  const hasValidAddress =
+    shippingAddress &&
+    typeof shippingAddress.fullName === 'string' && shippingAddress.fullName.trim() &&
+    typeof shippingAddress.street === 'string' && shippingAddress.street.trim() &&
+    typeof shippingAddress.city === 'string' && shippingAddress.city.trim() &&
+    typeof shippingAddress.postalCode === 'string' && shippingAddress.postalCode.trim();
+
+  if (!hasValidAddress) {
     throw new ApiError(400, 'Complete shipping address is required');
   }
 
-  const validPaymentMethods = ['card', 'upi', 'cod'];
-  const chosenMethod = validPaymentMethods.includes(paymentMethod) ? paymentMethod : 'card';
+  const chosenMethod = paymentMethod ?? 'card';
+  if (!VALID_PAYMENT_METHODS.includes(chosenMethod)) {
+    throw new ApiError(400, `Invalid payment method. Allowed: ${VALID_PAYMENT_METHODS.join(', ')}`);
+  }
+
+  // Aggregate duplicate product rows so stock checks consider total quantity
+  const quantityMap = new Map();
+  for (const item of items) {
+    const rawProductId = item?.product || item?.productId || item?.id;
+    if (!rawProductId || !mongoose.Types.ObjectId.isValid(rawProductId)) {
+      throw new ApiError(400, 'Invalid product ID in order items');
+    }
+
+    const numericQty = Number(item?.quantity);
+    if (!Number.isInteger(numericQty) || numericQty < 1) {
+      throw new ApiError(400, 'Item quantity must be a positive integer');
+    }
+
+    const key = String(rawProductId);
+    quantityMap.set(key, (quantityMap.get(key) || 0) + numericQty);
+  }
 
   const processedItems = [];
-  const productsToUpdate = [];
 
-  // Fallback product cache for non-ObjectId demo/mock items
-  let fallbackProduct = null;
-
-  // Step 1: Validate stock & determine server-verified price for each item
-  for (const item of items) {
-    const rawProductId = item.product || item.productId || item.id;
-    const quantity = parseInt(item.quantity, 10) || 1;
-
-    if (quantity < 1) {
-      throw new ApiError(400, 'Item quantity must be at least 1');
-    }
-
-    let product = null;
-
-    if (rawProductId && mongoose.Types.ObjectId.isValid(rawProductId)) {
-      product = await Product.findById(rawProductId);
-    }
-
-    // Graceful handling for mock/demo IDs (e.g. 'prod-1') during development/testing
+  // Step 1: Validate catalog product, category, approved vendor & server price
+  for (const [productId, quantity] of quantityMap.entries()) {
+    const product = await Product.findById(productId).populate('category', 'isActive');
     if (!product) {
-      if (!fallbackProduct) {
-        fallbackProduct = await Product.findOne({ isActive: true });
-      }
-
-      if (fallbackProduct) {
-        processedItems.push({
-          product: fallbackProduct._id,
-          title: item.name || item.title || fallbackProduct.title,
-          price: Number(item.price) || fallbackProduct.price,
-          quantity,
-          image: item.image || fallbackProduct.images?.[0] || '',
-          vendor: fallbackProduct.vendor,
-          itemStatus: 'pending',
-        });
-        continue;
-      } else {
-        throw new ApiError(404, `Product not available in database: ${item.name || rawProductId}`);
-      }
+      throw new ApiError(404, 'One or more products in your cart could not be found');
     }
 
-    // Real Product validation
-    if (!product.isActive) {
+    if (!product.isActive || !product.category || product.category.isActive === false) {
       throw new ApiError(400, `Product "${product.title}" is currently not available.`);
+    }
+
+    const approvedVendor = await vendorRepo.findPublicById(product.vendor);
+    if (!approvedVendor) {
+      throw new ApiError(400, `Seller for "${product.title}" is currently unavailable.`);
     }
 
     if (product.stock < quantity) {
       throw new ApiError(400, `Insufficient stock for "${product.title}". Only ${product.stock} available.`);
     }
 
-    // Calculate real price based on product discount
     const realPrice = (product.discount && product.discount > 0)
       ? Math.round(product.price * (1 - product.discount / 100))
       : product.price;
@@ -79,39 +96,21 @@ export const placeOrder = async ({ customerId, items, shippingAddress, paymentMe
       title: product.title,
       price: realPrice,
       quantity,
-      image: product.images?.[0] || item.image || '',
+      image: product.images?.[0] || '',
       vendor: product.vendor,
       itemStatus: 'pending',
     });
-
-    productsToUpdate.push({ product, quantity });
   }
 
-  // Step 2: Decrement stock for real database products
-  for (const item of productsToUpdate) {
-    item.product.stock -= item.quantity;
-    await item.product.save();
-  }
-
-  // Step 3: Compute totals
+  // Step 2: Compute server-verified totals & payment state
   const subtotal = processedItems.reduce((acc, it) => acc + (it.price * it.quantity), 0);
-  const shippingFee = 0; // Free standard delivery
+  const shippingFee = 0;
   const totalAmount = subtotal + shippingFee;
-
-  // Step 4: Simulate payment
-  let paymentStatus = 'paid';
-  let status = 'confirmed';
-  if (chosenMethod === 'cod') {
-    paymentStatus = 'pending';
-    status = 'confirmed';
-  }
-
-  // Step 5: Generate unique order number (ShopNest format SN-YYYY-XXXX)
-  const randomSuffix = Math.floor(1000 + Math.random() * 9000);
-  const orderNumber = `SN-${new Date().getFullYear()}-${randomSuffix}`;
+  const paymentStatus = chosenMethod === 'cod' ? 'pending' : 'paid';
+  const status = 'confirmed';
 
   const orderData = {
-    orderNumber,
+    orderNumber: generateOrderNumber(),
     customer: customerId,
     items: processedItems,
     shippingAddress: {
@@ -119,7 +118,7 @@ export const placeOrder = async ({ customerId, items, shippingAddress, paymentMe
       street: shippingAddress.street.trim(),
       city: shippingAddress.city.trim(),
       postalCode: shippingAddress.postalCode.trim(),
-      phone: (shippingAddress.phone || '').trim(),
+      phone: typeof shippingAddress.phone === 'string' ? shippingAddress.phone.trim() : '',
     },
     paymentMethod: chosenMethod,
     paymentStatus,
@@ -129,8 +128,31 @@ export const placeOrder = async ({ customerId, items, shippingAddress, paymentMe
     status,
   };
 
-  const createdOrder = await orderRepo.create(orderData);
-  return orderRepo.findById(createdOrder._id);
+  // Step 3: Atomically decrement stock and create order, rolling back stock on failure
+  const decremented = [];
+  try {
+    for (const item of processedItems) {
+      const updated = await Product.findOneAndUpdate(
+        { _id: item.product, isActive: true, stock: { $gte: item.quantity } },
+        { $inc: { stock: -item.quantity } },
+        { new: true }
+      );
+      if (!updated) {
+        throw new ApiError(400, `Insufficient stock for "${item.title}". Please refresh your cart.`);
+      }
+      decremented.push({ product: item.product, quantity: item.quantity });
+    }
+
+    const createdOrder = await orderRepo.create(orderData);
+    return orderRepo.findById(createdOrder._id);
+  } catch (err) {
+    await Promise.all(
+      decremented.map((entry) =>
+        Product.findByIdAndUpdate(entry.product, { $inc: { stock: entry.quantity } })
+      )
+    );
+    throw err;
+  }
 };
 
 export const getCustomerOrders = async (customerId) => {
@@ -149,27 +171,38 @@ export const getOrderById = async (orderId, userId, userRole) => {
     throw new ApiError(404, 'Order not found');
   }
 
-  // Only allow admin or the customer who placed the order (or vendor who has items in it)
-  if (userRole !== 'admin') {
-    const isCustomer = order.customer && order.customer._id.toString() === userId.toString();
-    let isVendor = false;
-
-    if (!isCustomer) {
-      const vendor = await vendorRepo.findByUserId(userId);
-      if (vendor) {
-        isVendor = order.items.some((it) => {
-          const itemVendorId = it.vendor?._id || it.vendor;
-          return itemVendorId && itemVendorId.toString() === vendor._id.toString();
-        });
-      }
-    }
-
-    if (!isCustomer && !isVendor) {
-      throw new ApiError(403, 'You are not authorized to view this order');
-    }
+  if (userRole === 'admin') {
+    return order;
   }
 
-  return order;
+  const isCustomer = order.customer && order.customer._id.toString() === userId.toString();
+  if (isCustomer) {
+    return order;
+  }
+
+  const vendor = await vendorRepo.findByUserId(userId);
+  const vendorItems = vendor
+    ? order.items.filter((it) => {
+        const itemVendorId = it.vendor?._id || it.vendor;
+        return itemVendorId && itemVendorId.toString() === vendor._id.toString();
+      })
+    : [];
+
+  if (vendorItems.length === 0) {
+    throw new ApiError(403, 'You are not authorized to view this order');
+  }
+
+  // Scope multi-vendor orders so a seller only inspects their own items
+  const activeVendorItems = vendorItems.filter((it) => it.itemStatus !== 'cancelled');
+  const vendorTotal = activeVendorItems.reduce((sum, it) => sum + (it.price * it.quantity), 0);
+  const plainOrder = order.toObject();
+
+  return {
+    ...plainOrder,
+    items: vendorItems,
+    vendorTotal,
+    vendorStatus: computeVendorOrderStatus(vendorItems, plainOrder.status),
+  };
 };
 
 // Day 6: Vendor Order Management & Fulfillment
@@ -187,7 +220,8 @@ export const getVendorOrders = async (userId) => {
       const itemVendorId = item.vendor?._id || item.vendor;
       return itemVendorId && itemVendorId.toString() === vendor._id.toString();
     });
-    const vendorTotal = vendorItems.reduce(
+    const activeVendorItems = vendorItems.filter((it) => it.itemStatus !== 'cancelled');
+    const vendorTotal = activeVendorItems.reduce(
       (sum, it) => sum + (it.price * it.quantity),
       0
     );
@@ -201,6 +235,7 @@ export const getVendorOrders = async (userId) => {
       paymentMethod: ord.paymentMethod,
       paymentStatus: ord.paymentStatus,
       status: ord.status,
+      vendorStatus: computeVendorOrderStatus(vendorItems, ord.status),
       items: vendorItems,
       vendorTotal,
     };
@@ -208,9 +243,16 @@ export const getVendorOrders = async (userId) => {
 };
 
 export const updateVendorOrderStatus = async ({ userId, orderId, status, itemId }) => {
-  const validStatuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
-  if (!validStatuses.includes(status)) {
-    throw new ApiError(400, `Invalid order status. Allowed: ${validStatuses.join(', ')}`);
+  if (!mongoose.Types.ObjectId.isValid(orderId)) {
+    throw new ApiError(400, 'Invalid order ID');
+  }
+
+  if (itemId !== undefined && itemId !== null && itemId !== '' && !mongoose.Types.ObjectId.isValid(itemId)) {
+    throw new ApiError(400, 'Invalid item ID');
+  }
+
+  if (!VALID_ITEM_STATUSES.includes(status)) {
+    throw new ApiError(400, `Invalid order status. Allowed: ${VALID_ITEM_STATUSES.join(', ')}`);
   }
 
   const vendor = await vendorRepo.findByUserId(userId);
@@ -223,41 +265,67 @@ export const updateVendorOrderStatus = async ({ userId, orderId, status, itemId 
     throw new ApiError(404, 'Order not found');
   }
 
-  // Find vendor's items in this order
-  let hasVendorItems = false;
-  for (const item of order.items) {
+  const vendorItems = order.items.filter((item) => {
     const itemVendorId = item.vendor?._id || item.vendor;
-    if (itemVendorId && itemVendorId.toString() === vendor._id.toString()) {
-      hasVendorItems = true;
-      if (!itemId || item._id.toString() === itemId.toString()) {
-        item.itemStatus = status;
-      }
-    }
-  }
+    return itemVendorId && itemVendorId.toString() === vendor._id.toString();
+  });
 
-  if (!hasVendorItems) {
+  if (vendorItems.length === 0) {
     throw new ApiError(403, 'You do not have any items in this order to fulfill');
   }
 
-  // Recalculate overall order status based on item statuses
-  const allDelivered = order.items.every((it) => it.itemStatus === 'delivered');
-  const allCancelled = order.items.every((it) => it.itemStatus === 'cancelled');
-  const allShipped = order.items.every((it) => it.itemStatus === 'shipped' || it.itemStatus === 'delivered');
-  const anyProcessing = order.items.some((it) => it.itemStatus === 'processing');
+  const targetItems = itemId
+    ? vendorItems.filter((item) => item._id.toString() === String(itemId))
+    : vendorItems;
 
-  if (allDelivered) {
-    order.status = 'delivered';
-  } else if (allCancelled) {
+  if (targetItems.length === 0) {
+    throw new ApiError(404, 'Order item not found for this vendor');
+  }
+
+  const newlyCancelled = [];
+  for (const item of targetItems) {
+    if (item.itemStatus === status) continue;
+    if (item.itemStatus === 'delivered' || item.itemStatus === 'cancelled') {
+      throw new ApiError(400, `Cannot change item status from ${item.itemStatus} to ${status}`);
+    }
+    if (status === 'cancelled') {
+      const prodId = item.product?._id || item.product;
+      if (prodId) {
+        newlyCancelled.push({ product: prodId, quantity: item.quantity });
+      }
+    }
+    item.itemStatus = status;
+  }
+
+  // Recalculate overall order status based on non-cancelled items
+  const allCancelled = order.items.every((it) => it.itemStatus === 'cancelled');
+  const activeItems = order.items.filter((it) => it.itemStatus !== 'cancelled');
+
+  if (allCancelled) {
     order.status = 'cancelled';
-  } else if (allShipped) {
+  } else if (activeItems.every((it) => it.itemStatus === 'delivered')) {
+    order.status = 'delivered';
+    if (order.paymentMethod === 'cod') {
+      order.paymentStatus = 'paid';
+    }
+  } else if (activeItems.every((it) => it.itemStatus === 'shipped' || it.itemStatus === 'delivered')) {
     order.status = 'shipped';
-  } else if (anyProcessing) {
+  } else if (activeItems.some((it) => it.itemStatus === 'processing' || it.itemStatus === 'shipped' || it.itemStatus === 'delivered')) {
     order.status = 'processing';
   } else {
-    order.status = status;
+    order.status = 'confirmed';
   }
 
   await order.save();
+
+  if (newlyCancelled.length > 0) {
+    await Promise.all(
+      newlyCancelled.map((entry) =>
+        Product.findByIdAndUpdate(entry.product, { $inc: { stock: entry.quantity } })
+      )
+    );
+  }
+
   return order;
 };
 
@@ -287,12 +355,19 @@ export const getVendorStats = async (userId) => {
       (sum, it) => sum + (it.price * it.quantity),
       0
     );
+    const allVendorDelivered =
+      activeVendorItems.length > 0 &&
+      activeVendorItems.every((it) => it.itemStatus === 'delivered');
 
-    if (ord.status !== 'cancelled' && (ord.paymentStatus === 'paid' || ord.status === 'delivered')) {
+    if (
+      ord.status !== 'cancelled' &&
+      activeVendorItems.length > 0 &&
+      (ord.paymentStatus === 'paid' || allVendorDelivered)
+    ) {
       totalRevenue += orderSubtotal;
     }
 
-    const hasPending = vendorItems.some(
+    const hasPending = activeVendorItems.some(
       (it) => it.itemStatus === 'pending' || it.itemStatus === 'processing'
     );
     if (ord.status !== 'cancelled' && hasPending) {

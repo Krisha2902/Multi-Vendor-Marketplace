@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Star,
   ArrowRight,
@@ -41,15 +41,12 @@ export default function SellersPage({
   onShowToast
 }) {
   const featuredSectionRef = useRef(null);
-  const [sellers, setSellers] = useState(propSellers);
-  const [loading, setLoading] = useState(propLoading && propSellers.length === 0);
-
-  useEffect(() => {
-    if (propSellers.length > 0) {
-      setSellers(propSellers);
-      setLoading(false);
-    }
-  }, [propSellers]);
+  const [fetchedSellers, setFetchedSellers] = useState([]);
+  const sellers = propSellers.length > 0 ? propSellers : fetchedSellers;
+  const [fetchLoading, setFetchLoading] = useState(false);
+  const loading = propSellers.length > 0 ? false : (propLoading || fetchLoading);
+  const [error, setError] = useState('');
+  const [reloadTick, setReloadTick] = useState(0);
 
   useEffect(() => {
     if (propSellers.length > 0) return;
@@ -57,21 +54,26 @@ export default function SellersPage({
     let active = true;
     const loadSellers = async () => {
       try {
-        setLoading(true);
+        setFetchLoading(true);
+        setError('');
         const list = await getPublicSellers();
-        if (active) setSellers(list || []);
+        if (active) setFetchedSellers(list || []);
       } catch (err) {
         console.error('Failed to load sellers:', err);
+        if (active) {
+          setError(err.response?.data?.message || 'Unable to load featured sellers right now.');
+        }
       } finally {
-        if (active) setLoading(false);
+        if (active) setFetchLoading(false);
       }
     };
 
-    loadSellers();
+    const timer = setTimeout(loadSellers, 0);
     return () => {
       active = false;
+      clearTimeout(timer);
     };
-  }, [propSellers.length]);
+  }, [propSellers.length, reloadTick]);
 
   const scrollToFeatured = () => {
     if (featuredSectionRef.current) {
@@ -160,6 +162,20 @@ export default function SellersPage({
 
         {loading && sellers.length === 0 ? (
           <p className="empty-state">Loading approved sellers...</p>
+        ) : error && sellers.length === 0 ? (
+          <div className="empty-state" style={{ color: '#b91c1c' }}>
+            <p>{error}</p>
+            <button
+              type="button"
+              className="btn-add-product"
+              style={{ marginTop: '0.75rem' }}
+              onClick={() => setReloadTick((prev) => prev + 1)}
+            >
+              Retry
+            </button>
+          </div>
+        ) : sellers.length === 0 ? (
+          <p className="empty-state">No approved sellers available yet.</p>
         ) : (
           <div className="sellers-featured-grid">
             {sellers.map((seller) => {

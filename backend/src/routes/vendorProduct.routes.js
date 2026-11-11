@@ -5,17 +5,19 @@ import {
   updateVendorProduct,
   deleteVendorProduct
 } from '../controllers/product.controller.js';
-import { protect } from '../middlewares/auth.js';
+import { protect, authorize } from '../middlewares/auth.js';
+import { validateBody, validateObjectIdParam } from '../middlewares/validate.js';
+import { createProductSchema, updateProductSchema } from '../validations/schemas.js';
 
 const router = Router();
 
 // All vendor product routes require authentication and approved vendor profile
-router.use(protect);
+router.use(protect, authorize('vendor'));
 
 router.get('/', getVendorProducts);
-router.post('/', createVendorProduct);
-router.put('/:id', updateVendorProduct);
-router.delete('/:id', deleteVendorProduct);
+router.post('/', validateBody(createProductSchema), createVendorProduct);
+router.put('/:id', validateObjectIdParam('id'), validateBody(updateProductSchema), updateVendorProduct);
+router.delete('/:id', validateObjectIdParam('id'), deleteVendorProduct);
 
 export default router;
 

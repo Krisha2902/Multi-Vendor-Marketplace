@@ -1,4 +1,4 @@
-import React, { Component, StrictMode } from 'react';
+import { Component, StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import './index.css';
 import App from './App.jsx';
@@ -26,7 +26,11 @@ class ErrorBoundary extends Component {
           <p style={{ color: '#4c0519', fontSize: '0.9rem', marginBottom: '1rem' }}>{this.state.error?.message || 'Unknown error'}</p>
           <button
             onClick={() => {
-              try { localStorage.clear(); } catch {}
+              try {
+                localStorage.clear();
+              } catch {
+                // Ignore storage access errors
+              }
               window.location.reload();
             }}
             style={{ padding: '0.55rem 1.1rem', backgroundColor: '#e11d48', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}

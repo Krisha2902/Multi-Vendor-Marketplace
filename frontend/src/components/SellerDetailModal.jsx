@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { X, Star, MapPin, Store, CheckCircle, Heart, ShoppingCart } from 'lucide-react';
 import { getPublicSellerById } from '../api/publicMarketplace';
 
@@ -9,11 +9,10 @@ export default function SellerDetailModal({
   onQuickView,
   onShowToast
 }) {
-  const [sellerDetail, setSellerDetail] = useState(seller);
+  const [sellerDetail, setSellerDetail] = useState(null);
   const [loadingProducts, setLoadingProducts] = useState(false);
 
   useEffect(() => {
-    setSellerDetail(seller);
     if (!seller?.id) return;
 
     let active = true;
@@ -39,7 +38,10 @@ export default function SellerDetailModal({
 
   if (!seller) return null;
 
-  const activeSeller = sellerDetail || seller;
+  const activeSeller =
+    sellerDetail && String(sellerDetail.id) === String(seller.id)
+      ? sellerDetail
+      : seller;
   const items = activeSeller.products?.length
     ? activeSeller.products
     : (activeSeller.thumbnails || []).map((thumb) => thumb.product || {

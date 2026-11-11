@@ -10,4 +10,15 @@ export const findById = (id) => User.findById(id);
 export const createUser = (data) => User.create(data);
 
 export const updateRole = (id, role) =>
-  User.findByIdAndUpdate(id, { role }, { new: true });
+  User.findByIdAndUpdate(id, { role }, { new: true });
+
+export const findAll = (filter = {}, skip = 0, limit = 50) =>
+  User.find(filter)
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(limit);
+
+export const countAll = (filter = {}) => User.countDocuments(filter);
+
+export const updateActiveStatus = (id, isActive) =>
+  User.findByIdAndUpdate(id, { isActive }, { new: true });

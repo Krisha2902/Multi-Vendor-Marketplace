@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   X, 
   CheckCircle2, 
@@ -13,6 +13,17 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
+
+const FALLBACK_SELLER_CATEGORIES = [
+  'Fashion',
+  'Home & Living',
+  'Beauty',
+  'Electronics',
+  'Sports',
+  'Toys & Games',
+  'Books',
+  'Handmade',
+];
 
 export default function SellerModal({ 
   isOpen, 
@@ -31,51 +42,82 @@ export default function SellerModal({
     bio: ''
   });
 
+  const [categoryOptions, setCategoryOptions] = useState(FALLBACK_SELLER_CATEGORIES);
   const [loadingProfile, setLoadingProfile] = useState(false);
   const [existingVendor, setExistingVendor] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [submittedSuccess, setSubmittedSuccess] = useState(false);
 
-  // Sync user info and fetch existing vendor application status
+  // Sync user info, active categories, and existing vendor application status
   useEffect(() => {
     if (!isOpen) return;
 
-    setErrorMsg('');
-    setSubmittedSuccess(false);
+    let active = true;
 
-    if (user) {
-      setFormData((prev) => ({
-        ...prev,
-        fullName: user.name || '',
-        email: user.email || ''
-      }));
+    const loadModalData = async () => {
+      setErrorMsg('');
+      setSubmittedSuccess(false);
 
-      // Check if user already submitted application
-      setLoadingProfile(true);
-      api.get('/vendors/me')
+      api.get('/categories')
         .then((res) => {
-          if (res.data?.vendor) {
-            setExistingVendor(res.data.vendor);
-            setFormData((prev) => ({
-              ...prev,
-              storeName: res.data.vendor.shopName || '',
-              category: res.data.vendor.category || 'Home & Living',
-              bio: res.data.vendor.description || ''
-            }));
-          } else {
-            setExistingVendor(null);
+          if (!active) return;
+          const names = (res.data?.categories || []).map((c) => c.name).filter(Boolean);
+          if (names.length > 0) {
+            setCategoryOptions(names);
           }
         })
         .catch(() => {
-          setExistingVendor(null);
-        })
-        .finally(() => {
-          setLoadingProfile(false);
+          // Keep seeded fallback options on transient category fetch failure
         });
-    } else {
-      setExistingVendor(null);
-    }
+
+      if (!user) {
+        setExistingVendor(null);
+        return;
+      }
+
+      setFormData((prev) => ({
+        ...prev,
+        fullName: user.name || '',
+        email: user.email || '',
+      }));
+
+      if (user.role === 'admin') {
+        setExistingVendor(null);
+        return;
+      }
+
+      setLoadingProfile(true);
+      try {
+        const res = await api.get('/vendors/me');
+        if (!active) return;
+        if (res.data?.vendor) {
+          setExistingVendor(res.data.vendor);
+          setFormData((prev) => ({
+            ...prev,
+            storeName: res.data.vendor.shopName || '',
+            category: res.data.vendor.category || 'Home & Living',
+            bio: res.data.vendor.description || '',
+          }));
+        } else {
+          setExistingVendor(null);
+        }
+      } catch (err) {
+        if (!active) return;
+        setExistingVendor(null);
+        if (err?.response?.status && err.response.status !== 404) {
+          setErrorMsg(err.response?.data?.message || 'Unable to verify current seller status.');
+        }
+      } finally {
+        if (active) setLoadingProfile(false);
+      }
+    };
+
+    const timer = setTimeout(loadModalData, 0);
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
   }, [isOpen, user]);
 
   if (!isOpen) return null;
@@ -163,6 +205,22 @@ export default function SellerModal({
               >
                 <LogIn size={18} />
                 <span>Sign In or Register</span>
+              </button>
+            </div>
+          </div>
+        ) : user.role === 'admin' ? (
+          /* Admin Role Guard */
+          <div className="seller-auth-required">
+            <div className="seller-icon-avatar">
+              <ShieldCheck size={38} />
+            </div>
+            <h2 className="seller-modal-title">Admin Accounts Cannot Apply as Seller</h2>
+            <p className="seller-modal-subtitle">
+              Admin accounts review and approve seller stores. Please sign in with a customer account if you want to create a seller store.
+            </p>
+            <div className="seller-action-row">
+              <button type="button" className="submit-seller-btn" onClick={onClose}>
+                Got it
               </button>
             </div>
           </div>
@@ -304,14 +362,14 @@ export default function SellerModal({
                   onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                   className="form-select"
                 >
-                  <option value="Home & Living">Home & Living</option>
-                  <option value="Fashion">Fashion & Apparel</option>
-                  <option value="Beauty">Beauty & Wellness</option>
-                  <option value="Electronics">Electronics & Audio</option>
-                  <option value="Sports">Sports & Activewear</option>
-                  <option value="Toys & Games">Toys & Games</option>
-                  <option value="Books">Books & Stationery</option>
-                  <option value="Pottery & Art">Pottery & Art</option>
+                  {!categoryOptions.includes(formData.category) && formData.category && (
+                    <option value={formData.category}>{formData.category}</option>
+                  )}
+                  {categoryOptions.map((catName) => (
+                    <option key={catName} value={catName}>
+                      {catName}
+                    </option>
+                  ))}
                 </select>
               </div>
 

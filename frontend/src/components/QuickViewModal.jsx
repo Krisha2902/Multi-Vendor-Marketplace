@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { getPublicProductById } from '../api/publicMarketplace';
 import {
   X,
@@ -238,7 +238,7 @@ export default function QuickViewModal({
                 ).toLocaleString('en-IN')}
               </span>
 
-              {currentProduct.originalPrice && (
+              {currentProduct.originalPrice && Number(currentProduct.originalPrice) > Number(currentProduct.price || 0) && (
                 <>
                   <span className="qv-original-price">
                     ₹{Number(

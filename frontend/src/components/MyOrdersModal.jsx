@@ -1,30 +1,64 @@
-import React, { useState, useEffect } from 'react';
-import { X, Package, Calendar, MapPin, CreditCard, Loader2, ShoppingBag, ArrowRight } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { X, Package, Calendar, MapPin, CreditCard, Loader2, ShoppingBag, ArrowRight, AlertCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
 
 export default function MyOrdersModal({ isOpen, onClose, onShowToast, onNavigateShop }) {
   const { user } = useAuth();
   const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [expandedOrderId, setExpandedOrderId] = useState(null);
+  const [orderDetailsMap, setOrderDetailsMap] = useState({});
+  const [detailLoadingId, setDetailLoadingId] = useState(null);
 
-  useEffect(() => {
-    if (isOpen && user) {
-      fetchMyOrders();
-    }
-  }, [isOpen, user]);
-
-  const fetchMyOrders = async () => {
+  const fetchMyOrders = useCallback(async () => {
     setLoading(true);
+    setError('');
     try {
       const res = await api.get('/orders/my');
       setOrders(res.data?.orders || []);
     } catch (err) {
+      const msg = err.response?.data?.message || 'Failed to load your orders';
+      setError(msg);
       if (onShowToast) {
-        onShowToast(err.response?.data?.message || 'Failed to load your orders');
+        onShowToast(msg);
       }
     } finally {
       setLoading(false);
+    }
+  }, [onShowToast]);
+
+  useEffect(() => {
+    if (isOpen && user) {
+      const timer = setTimeout(() => {
+        fetchMyOrders();
+      }, 0);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, user, fetchMyOrders]);
+
+  const handleToggleOrderDetail = async (orderId) => {
+    if (expandedOrderId === orderId) {
+      setExpandedOrderId(null);
+      return;
+    }
+
+    setExpandedOrderId(orderId);
+    if (orderDetailsMap[orderId]) return;
+
+    setDetailLoadingId(orderId);
+    try {
+      const res = await api.get(`/orders/${orderId}`);
+      if (res.data?.order) {
+        setOrderDetailsMap((prev) => ({ ...prev, [orderId]: res.data.order }));
+      }
+    } catch (err) {
+      if (onShowToast) {
+        onShowToast(err.response?.data?.message || 'Could not load full order details');
+      }
+    } finally {
+      setDetailLoadingId(null);
     }
   };
 
@@ -93,10 +127,25 @@ export default function MyOrdersModal({ isOpen, onClose, onShowToast, onNavigate
             <p>Track your artisan orders and view real-time delivery status.</p>
           </div>
 
-          {loading ? (
+          {!user ? (
+            <div style={{ textAlign: 'center', padding: '3rem 1.5rem', background: '#fafaf9', borderRadius: '12px' }}>
+              <Package size={48} style={{ color: '#94a3b8', margin: '0 auto 1rem auto' }} />
+              <h3 style={{ fontSize: '1.15rem', color: '#1e293b', marginBottom: '0.5rem' }}>Sign in to view your orders</h3>
+              <p style={{ color: '#64748b' }}>Please sign in to inspect your order history and tracking status.</p>
+            </div>
+          ) : loading ? (
             <div style={{ textAlign: 'center', padding: '3rem 1rem' }}>
-              <Loader2 size={36} className="spinner" style={{ margin: '0 auto 1rem auto' }} />
+              <Loader2 size={36} className="spinning-loader" style={{ margin: '0 auto 1rem auto' }} />
               <p style={{ color: '#64748b' }}>Loading your orders from database...</p>
+            </div>
+          ) : error ? (
+            <div style={{ textAlign: 'center', padding: '3rem 1.5rem', background: '#fef2f2', borderRadius: '12px', border: '1px solid #fecaca' }}>
+              <AlertCircle size={44} style={{ color: '#b91c1c', margin: '0 auto 0.75rem auto' }} />
+              <h3 style={{ fontSize: '1.1rem', color: '#991b1b', marginBottom: '0.4rem' }}>Could not load orders</h3>
+              <p style={{ color: '#b91c1c', marginBottom: '1.25rem' }}>{error}</p>
+              <button className="btn-add-product" onClick={fetchMyOrders}>
+                Retry
+              </button>
             </div>
           ) : orders.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '3.5rem 1.5rem', background: '#fafaf9', borderRadius: '12px' }}>
@@ -118,7 +167,11 @@ export default function MyOrdersModal({ isOpen, onClose, onShowToast, onNavigate
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-              {orders.map((ord) => (
+              {orders.map((ord) => {
+                const detail = orderDetailsMap[ord._id] || ord;
+                const isExpanded = expandedOrderId === ord._id;
+
+                return (
                 <div
                   key={ord._id}
                   style={{
@@ -158,20 +211,40 @@ export default function MyOrdersModal({ isOpen, onClose, onShowToast, onNavigate
                         })}
                       </span>
                       {getStatusBadge(ord.status)}
+                      <button
+                        type="button"
+                        onClick={() => handleToggleOrderDetail(ord._id)}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.25rem',
+                          fontSize: '0.78rem',
+                          fontWeight: 600,
+                          color: '#233123',
+                          background: '#f1f5f9',
+                          border: '1px solid #cbd5e1',
+                          borderRadius: '6px',
+                          padding: '0.25rem 0.55rem',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        <span>{isExpanded ? 'Hide' : 'Details'}</span>
+                        {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                      </button>
                     </div>
                   </div>
 
                   {/* Order Items */}
                   <div style={{ margin: '1rem 0' }}>
-                    {ord.items?.map((item, idx) => (
+                    {detail.items?.map((item, idx) => (
                       <div
-                        key={idx}
+                        key={item._id || idx}
                         style={{
                           display: 'flex',
                           alignItems: 'center',
                           gap: '0.85rem',
                           padding: '0.5rem 0',
-                          borderBottom: idx < ord.items.length - 1 ? '1px dashed #f1f5f9' : 'none',
+                          borderBottom: idx < detail.items.length - 1 ? '1px dashed #f1f5f9' : 'none',
                         }}
                       >
                         {item.image ? (
@@ -209,6 +282,7 @@ export default function MyOrdersModal({ isOpen, onClose, onShowToast, onNavigate
                           </p>
                           <span style={{ fontSize: '0.8rem', color: '#64748b' }}>
                             Qty: {item.quantity} × ₹{item.price?.toLocaleString('en-IN')}
+                            {item.vendor?.shopName ? ` • by ${item.vendor.shopName}` : ''}
                             {item.itemStatus && ` • ${item.itemStatus}`}
                           </span>
                         </div>
@@ -219,6 +293,44 @@ export default function MyOrdersModal({ isOpen, onClose, onShowToast, onNavigate
                       </div>
                     ))}
                   </div>
+
+                  {/* Expandable Breakdown */}
+                  {isExpanded && (
+                    <div
+                      style={{
+                        background: '#f8fafc',
+                        border: '1px solid #e2e8f0',
+                        borderRadius: '8px',
+                        padding: '0.85rem 1rem',
+                        marginBottom: '0.85rem',
+                        fontSize: '0.83rem',
+                        color: '#334155',
+                      }}
+                    >
+                      {detailLoadingId === ord._id ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#64748b' }}>
+                          <Loader2 size={15} className="spinning-loader" />
+                          <span>Loading full order summary...</span>
+                        </div>
+                      ) : (
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.6rem' }}>
+                          <div>
+                            <strong style={{ color: '#0f172a' }}>Recipient:</strong>{' '}
+                            {detail.shippingAddress?.fullName || '—'}
+                            {detail.shippingAddress?.phone ? ` (${detail.shippingAddress.phone})` : ''}
+                          </div>
+                          <div>
+                            <strong style={{ color: '#0f172a' }}>Subtotal:</strong>{' '}
+                            ₹{(detail.subtotal ?? detail.totalAmount ?? 0).toLocaleString('en-IN')}
+                          </div>
+                          <div>
+                            <strong style={{ color: '#0f172a' }}>Shipping:</strong>{' '}
+                            {detail.shippingFee ? `₹${detail.shippingFee.toLocaleString('en-IN')}` : 'FREE'}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   {/* Order Card Footer */}
                   <div
@@ -254,7 +366,8 @@ export default function MyOrdersModal({ isOpen, onClose, onShowToast, onNavigate
                     </div>
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
