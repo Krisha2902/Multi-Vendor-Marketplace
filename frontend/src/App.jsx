@@ -29,6 +29,7 @@ import SellerModal from './components/SellerModal';
 import SellerDetailModal from './components/SellerDetailModal';
 import CheckoutModal from './components/CheckoutModal';
 import AuthModal from './components/AuthModal';
+import MyOrdersModal from './components/MyOrdersModal';
 import Toast from './components/Toast';
 
 // Real Backend API Services
@@ -75,21 +76,65 @@ export default function App() {
 
 
   // ==========================================
-  // 3. CART & WISHLIST STATES
+  // 3. CART & WISHLIST STATES (Persisted in localStorage)
   // ==========================================
 
-  // Removed hardcoded mock cart products
-
-  const [cartItems, setCartItems] = useState([]);
+  const [cartItems, setCartItems] = useState(() => {
+    try {
+      const saved = localStorage.getItem('shopnest_cart');
+      if (saved) return JSON.parse(saved);
+    } catch {
+      // Ignore localStorage parse error
+    }
+    return [];
+  });
 
   // Wishlist stores actual MongoDB product IDs
-
-  const [wishlistIds, setWishlistIds] = useState([]);
+  const [wishlistIds, setWishlistIds] = useState(() => {
+    try {
+      const saved = localStorage.getItem('shopnest_wishlist');
+      if (saved) return JSON.parse(saved);
+    } catch {
+      // Ignore localStorage parse error
+    }
+    return [];
+  });
 
   // Keep actual product objects for the wishlist drawer,
   // including products opened from other pages.
+  const [wishlistProductMap, setWishlistProductMap] = useState(() => {
+    try {
+      const saved = localStorage.getItem('shopnest_wishlist_map');
+      if (saved) return JSON.parse(saved);
+    } catch {
+      // Ignore localStorage parse error
+    }
+    return {};
+  });
 
-  const [wishlistProductMap, setWishlistProductMap] = useState({});
+  useEffect(() => {
+    try {
+      localStorage.setItem('shopnest_cart', JSON.stringify(cartItems));
+    } catch {
+      // Ignore storage write error
+    }
+  }, [cartItems]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('shopnest_wishlist', JSON.stringify(wishlistIds));
+    } catch {
+      // Ignore storage write error
+    }
+  }, [wishlistIds]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('shopnest_wishlist_map', JSON.stringify(wishlistProductMap));
+    } catch {
+      // Ignore storage write error
+    }
+  }, [wishlistProductMap]);
 
 
   // ==========================================
@@ -105,6 +150,8 @@ export default function App() {
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
 
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+
+  const [isMyOrdersOpen, setIsMyOrdersOpen] = useState(false);
 
   const [quickViewProduct, setQuickViewProduct] = useState(null);
 
@@ -269,7 +316,9 @@ export default function App() {
 
           ]);
 
-          featured = featuredResult || [];
+          featured = featuredResult && featuredResult.length > 0
+            ? featuredResult
+            : (latestResult || []);
 
           arrivals = latestResult || [];
 
@@ -332,14 +381,15 @@ export default function App() {
   // ==========================================
 
   const handleAddToCart = (product) => {
-
+    const productId = String(product._id || product.id);
+    const productName = product.name || product.title;
     const qty = product.quantity || 1;
 
     setCartItems((prev) => {
-      const existing = prev.find((item) => (item._id || item.id) === (product._id || product.id));
+      const existing = prev.find((item) => String(item._id || item.id) === productId);
       if (existing) {
         return prev.map((item) =>
-          (item._id || item.id) === (product._id || product.id)
+          String(item._id || item.id) === productId
             ? { ...item, quantity: item.quantity + qty }
             : item
         );
@@ -349,36 +399,31 @@ export default function App() {
         ...prev,
         {
           ...product,
+          id: productId,
+          name: productName,
           quantity: qty
         }
       ];
-
     });
-    showToast(`"${product.name || product.title}" added to cart!`);
+    showToast(`"${productName}" added to cart!`);
   };
 
 
   const handleUpdateQuantity = (productId, newQty) => {
-
     if (newQty <= 0) {
-
       handleRemoveFromCart(productId);
-
       return;
-
     }
 
     setCartItems((prev) =>
-      prev.map((item) => ((item._id || item.id) === productId ? { ...item, quantity: newQty } : item))
+      prev.map((item) => (String(item._id || item.id) === String(productId) ? { ...item, quantity: newQty } : item))
     );
-
   };
 
 
   const handleRemoveFromCart = (productId) => {
-    setCartItems((prev) => prev.filter((item) => (item._id || item.id) !== productId));
+    setCartItems((prev) => prev.filter((item) => String(item._id || item.id) !== String(productId)));
     showToast('Item removed from cart.');
-
   };
 
 
@@ -387,32 +432,26 @@ export default function App() {
   // ==========================================
 
   const handleToggleWishlist = (product) => {
-
-    const productId = product._id || product.id;
-  
+    if (!product) return;
+    const productId = String(product._id || product.id);
+    const productName = product.name || product.title || 'Item';
+    const normalizedItem = { ...product, id: productId, name: productName };
 
     if (wishlistIds.includes(productId)) {
-
       setWishlistIds((prev) =>
         prev.filter((id) => id !== productId)
       );
 
       setWishlistProductMap((prev) => {
-
         const updated = { ...prev };
-
         delete updated[productId];
-
         return updated;
-
       });
 
       showToast(
-        `Removed "${product.name || product.title}" from wishlist.`
+        `Removed "${productName}" from wishlist.`
       );
-
     } else {
-
       setWishlistIds((prev) => [
         ...prev,
         productId
@@ -420,32 +459,28 @@ export default function App() {
 
       setWishlistProductMap((prev) => ({
         ...prev,
-        [productId]: product
+        [productId]: normalizedItem
       }));
 
       showToast(
-        `Saved "${product.name || product.title}" to wishlist!`
+        `Saved "${productName}" to wishlist!`
       );
-
     }
-
   };
 
 
   const handleMoveToCart = (product) => {
-
     handleAddToCart(product);
-  const productId = product._id || product.id;
-   setWishlistIds((prev) =>
-    prev.filter((id) => id !== productId)
-  );
+    const productId = String(product._id || product.id);
+    setWishlistIds((prev) =>
+      prev.filter((id) => id !== productId)
+    );
 
-  setWishlistProductMap((prev) => {
-    const updated = { ...prev };
-    delete updated[productId];
-    return updated;
+    setWishlistProductMap((prev) => {
+      const updated = { ...prev };
+      delete updated[productId];
+      return updated;
     });
-
   };
 
 
@@ -587,6 +622,10 @@ export default function App() {
           setIsAuthModalOpen(true)
         }
 
+        onOpenMyOrders={() =>
+          setIsMyOrdersOpen(true)
+        }
+
       />
 
 
@@ -640,6 +679,14 @@ export default function App() {
               setQuickViewProduct(p)
             }
 
+            selectedCategory={selectedCategory}
+
+            searchQuery={searchQuery}
+
+            categories={categories}
+
+            sellers={featuredSellers}
+
             onNavigateHome={() => {
 
               setActiveTab('home');
@@ -661,6 +708,8 @@ export default function App() {
 
           <CategoriesPage
 
+            categories={categories}
+
             wishlistIds={wishlistIds}
 
             onToggleWishlist={handleToggleWishlist}
@@ -673,9 +722,7 @@ export default function App() {
 
             onNavigateShop={(catId) => {
 
-              if (catId) {
-                setSelectedCategory(catId);
-              }
+              setSelectedCategory(catId || null);
 
               setActiveTab('shop');
 
@@ -706,6 +753,10 @@ export default function App() {
           /* SELLERS PAGE */
 
           <SellersPage
+
+            sellers={featuredSellers}
+
+            isLoading={marketplaceLoading}
 
             onSelectSeller={(seller) =>
               setSelectedSeller(seller)
@@ -1141,7 +1192,7 @@ export default function App() {
           }
 
           isWishlisted={wishlistIds.includes(
-            quickViewProduct.id
+            String(quickViewProduct._id || quickViewProduct.id)
           )}
 
           onToggleWishlist={handleToggleWishlist}
@@ -1227,6 +1278,34 @@ export default function App() {
         onOrderComplete={handleOrderComplete}
 
         onOpenAuthModal={() => setIsAuthModalOpen(true)}
+      />
+
+
+      {/* ===================================
+          MY ORDERS HISTORY MODAL (Day 6)
+      =================================== */}
+
+      <MyOrdersModal
+
+        isOpen={isMyOrdersOpen}
+
+        onClose={() =>
+          setIsMyOrdersOpen(false)
+        }
+
+        onShowToast={showToast}
+
+        onNavigateShop={() => {
+
+          setActiveTab('shop');
+
+          window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+          });
+
+        }}
+
       />
 
 

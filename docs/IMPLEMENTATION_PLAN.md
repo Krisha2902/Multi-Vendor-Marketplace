@@ -81,12 +81,12 @@ Har din ek **vertical slice** hoga: backend API + usi din frontend integration. 
 **End of day:** Approved vendor apna product add/edit/delete kar sakta hai.
 
 ### Day 4 — Public Product APIs aur Frontend Integration
-- [ ] `GET /products?search=&category=&page=&sort=`
-- [ ] `GET /products/:id`
-- [ ] Featured aur New Arrivals endpoints
-- [ ] Sellers list aur seller detail endpoints
-- [ ] Frontend se `mockData.js` hatana
-- [ ] Hero search, CategoriesBar, FeaturedProducts, NewArrivals, FeaturedSellers, QuickViewModal ko real data se jodna
+- [x] `GET /products?search=&category=&page=&sort=`
+- [x] `GET /products/:id`
+- [x] Featured aur New Arrivals endpoints
+- [x] Sellers list aur seller detail endpoints
+- [x] Frontend se `mockData.js` hatana
+- [x] Hero search, CategoriesBar, FeaturedProducts, NewArrivals, FeaturedSellers, QuickViewModal ko real data se jodna
 
 **End of day:** Home page poora real data pe chalta hai.
 
@@ -100,10 +100,10 @@ Har din ek **vertical slice** hoga: backend API + usi din frontend integration. 
 **End of day:** Customer order place kar sakta hai aur order ID DB se aata hai.
 
 ### Day 6 — Order Lifecycle
-- [ ] `GET /orders/my` + "My Orders" page (list + detail)
-- [ ] `GET /vendor/orders` (sirf apne items)
-- [ ] `PATCH /vendor/orders/:id/status`: `pending → processing → shipped → delivered`
-- [ ] Vendor dashboard me basic stats (total orders, revenue, products)
+- [x] `GET /orders/my` + "My Orders" page (list + detail)
+- [x] `GET /vendor/orders` (sirf apne items)
+- [x] `PATCH /vendor/orders/:id/status`: `pending → processing → shipped → delivered`
+- [x] Vendor dashboard me basic stats (total orders, revenue, products)
 
 **End of day:** Order ka poora lifecycle chalta hai.
 

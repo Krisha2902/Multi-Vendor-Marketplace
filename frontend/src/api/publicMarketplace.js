@@ -83,11 +83,14 @@ export const normalizeSeller = (seller) => {
 
     reviewsCount: null,
 
+    products,
+
     thumbnails: products.map((product) => ({
       id: product.id,
       title: product.name,
       image: product.image,
       price: product.price,
+      product,
     })),
   };
 };

@@ -1,18 +1,33 @@
-import React, { useState, useMemo } from 'react';
-import { 
-  Search, 
-  Heart, 
-  ShoppingCart, 
-  Star, 
-  ChevronDown, 
-  ChevronLeft, 
-  ChevronRight, 
-  RotateCcw, 
-  SlidersHorizontal,
-  Send,
-  Check
+import React, { useState, useMemo, useEffect } from 'react';
+import {
+  Heart,
+  ShoppingCart,
+  Star,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  RotateCcw,
 } from 'lucide-react';
-import { SHOP_CATALOG_PRODUCTS } from '../data/mockData';
+import {
+  getPublicProducts,
+  getPublicCategories,
+  getPublicSellers,
+} from '../api/publicMarketplace';
+
+const SORT_TO_API = {
+  popularity: 'popular',
+  'price-low': 'price_asc',
+  'price-high': 'price_desc',
+  rating: 'rating_desc',
+  newest: 'newest',
+};
+
+const PRICE_RANGE_OPTIONS = [
+  { id: '0-500', label: '₹0 – ₹500', min: 0, max: 500 },
+  { id: '500-1000', label: '₹500 – ₹1,000', min: 500, max: 1000 },
+  { id: '1000-2000', label: '₹1,000 – ₹2,000', min: 1000, max: 2000 },
+  { id: '2000+', label: '₹2,000+', min: 2000, max: Infinity }
+];
 
 export default function ShopPage({
   wishlistIds = [],
@@ -20,15 +35,21 @@ export default function ShopPage({
   onAddToCart,
   onQuickView,
   onNavigateHome,
-  onShowToast
+  onShowToast,
+  selectedCategory = null,
+  searchQuery = '',
+  categories: propCategories = [],
+  sellers: propSellers = [],
 }) {
+  const [categories, setCategories] = useState(propCategories);
+  const [sellers, setSellers] = useState(propSellers);
+
   // Filters State
-  const [heroSearch, setHeroSearch] = useState('');
-  const [appliedSearch, setAppliedSearch] = useState('');
-  const [selectedPill, setSelectedPill] = useState('all');
+  const [heroSearch, setHeroSearch] = useState(searchQuery || '');
+  const [appliedSearch, setAppliedSearch] = useState((searchQuery || '').trim());
+  const [selectedPill, setSelectedPill] = useState(selectedCategory || 'all');
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [selectedPriceRanges, setSelectedPriceRanges] = useState([]);
-  const [selectedBrands, setSelectedBrands] = useState([]);
   const [minRating, setMinRating] = useState(null);
   const [selectedAvailability, setSelectedAvailability] = useState(null);
   const [selectedSeller, setSelectedSeller] = useState('All Sellers');
@@ -36,67 +57,154 @@ export default function ShopPage({
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 12;
 
+  // Products & API State
+  const [apiProducts, setApiProducts] = useState([]);
+  const [serverPagination, setServerPagination] = useState({ totalProducts: 0, totalPages: 1 });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
   // Newsletter State
   const [newsletterEmail, setNewsletterEmail] = useState('');
 
-  // Pills definitions matching design
-  const categoryPills = [
-    { id: 'all', label: 'All' },
-    { id: 'fashion', label: 'Fashion' },
-    { id: 'home', label: 'Home & Living' },
-    { id: 'beauty', label: 'Beauty' },
-    { id: 'electronics', label: 'Electronics' },
-    { id: 'sports', label: 'Sports' },
-    { id: 'toys', label: 'Toys & Games' },
-    { id: 'books', label: 'Books' }
-  ];
+  // Keep categories & sellers synced with App or fetch standalone
+  useEffect(() => {
+    if (propCategories.length > 0) setCategories(propCategories);
+  }, [propCategories]);
 
-  // Category filter options for sidebar
-  const sidebarCategories = [
-    { id: 'fashion', label: 'Fashion' },
-    { id: 'home', label: 'Home & Living' },
-    { id: 'beauty', label: 'Beauty' },
-    { id: 'electronics', label: 'Electronics' },
-    { id: 'sports', label: 'Sports' },
-    { id: 'toys', label: 'Toys & Games' },
-    { id: 'books', label: 'Books' }
-  ];
+  useEffect(() => {
+    if (propSellers.length > 0) setSellers(propSellers);
+  }, [propSellers]);
 
-  // Price range options
-  const priceRangeOptions = [
-    { id: '0-500', label: '₹0 – ₹500', min: 0, max: 500 },
-    { id: '500-1000', label: '₹500 – ₹1,000', min: 500, max: 1000 },
-    { id: '1000-2000', label: '₹1,000 – ₹2,000', min: 1000, max: 2000 },
-    { id: '2000+', label: '₹2,000+', min: 2000, max: Infinity }
-  ];
+  useEffect(() => {
+    let active = true;
+    const loadFilterMetadata = async () => {
+      try {
+        const [catData, sellerData] = await Promise.all([
+          propCategories.length > 0 ? Promise.resolve(propCategories) : getPublicCategories(),
+          propSellers.length > 0 ? Promise.resolve(propSellers) : getPublicSellers(),
+        ]);
+        if (!active) return;
+        setCategories(catData || []);
+        setSellers(sellerData || []);
+      } catch (err) {
+        console.warn('Could not load shop filter options:', err.message);
+      }
+    };
 
-  // Brands list
-  const brandOptions = ['Nike', 'Zara', 'H&M', 'Sony', 'Others'];
+    if (propCategories.length === 0 || propSellers.length === 0) {
+      loadFilterMetadata();
+    }
+    return () => {
+      active = false;
+    };
+  }, []);
 
-  // Sellers list
-  const sellerOptions = [
-    'All Sellers',
-    'StyleStudio',
-    'TechNest',
-    'UrbanCraft',
-    'BloomBeauty',
-    'FitZone',
-    'DreamToys',
-    'BookHaven',
-    'HomeAura',
-    'CozyHome'
-  ];
+  // Sync external category/search navigation into ShopPage
+  useEffect(() => {
+    setSelectedPill(selectedCategory || 'all');
+    setSelectedCategories([]);
+    setCurrentPage(1);
+  }, [selectedCategory]);
 
-  // Handle Search Submission
+  useEffect(() => {
+    setHeroSearch(searchQuery || '');
+    setAppliedSearch((searchQuery || '').trim());
+    setCurrentPage(1);
+  }, [searchQuery]);
+
+  // Determine single category parameter supported by GET /api/products
+  const effectiveCategoryIds = useMemo(() => {
+    if (selectedCategories.length > 0) return selectedCategories;
+    if (selectedPill && selectedPill !== 'all') return [selectedPill];
+    return [];
+  }, [selectedPill, selectedCategories]);
+
+  const hasClientOnlyFilters =
+    selectedCategories.length > 1 ||
+    (selectedPill !== 'all' && selectedCategories.length > 0 && !selectedCategories.includes(selectedPill)) ||
+    selectedPriceRanges.length > 0 ||
+    minRating !== null ||
+    selectedAvailability !== null ||
+    selectedSeller !== 'All Sellers';
+
+  // Fetch products from GET /api/products
+  useEffect(() => {
+    let active = true;
+
+    const loadProducts = async () => {
+      try {
+        setLoading(true);
+        setError('');
+
+        const params = {
+          sort: SORT_TO_API[sortBy] || 'newest',
+          page: hasClientOnlyFilters ? 1 : currentPage,
+          limit: hasClientOnlyFilters ? 50 : pageSize,
+        };
+
+        if (appliedSearch) {
+          params.search = appliedSearch;
+        }
+
+        if (effectiveCategoryIds.length === 1 && !(selectedPill !== 'all' && selectedCategories.length > 0)) {
+          params.category = effectiveCategoryIds[0];
+        }
+
+        const data = await getPublicProducts(params);
+        if (!active) return;
+
+        setApiProducts(data.products || []);
+        setServerPagination({
+          totalProducts: data.pagination?.totalProducts ?? (data.products?.length || 0),
+          totalPages: Math.max(1, data.pagination?.totalPages ?? 1),
+        });
+      } catch (err) {
+        console.error('Error loading shop products:', err);
+        if (active) {
+          setApiProducts([]);
+          setServerPagination({ totalProducts: 0, totalPages: 1 });
+          setError(err.response?.data?.message || 'Unable to load products. Please try again.');
+        }
+      } finally {
+        if (active) setLoading(false);
+      }
+    };
+
+    loadProducts();
+    return () => {
+      active = false;
+    };
+  }, [
+    appliedSearch,
+    selectedPill,
+    selectedCategories,
+    sortBy,
+    currentPage,
+    hasClientOnlyFilters,
+    effectiveCategoryIds,
+  ]);
+
+  const categoryPills = useMemo(
+    () => [
+      { id: 'all', label: 'All' },
+      ...categories.map((cat) => ({ id: String(cat._id || cat.id), label: cat.name })),
+    ],
+    [categories]
+  );
+
+  const sellerOptions = useMemo(
+    () => ['All Sellers', ...sellers.map((s) => s.name).filter(Boolean)],
+    [sellers]
+  );
+
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     setAppliedSearch(heroSearch.trim());
     setCurrentPage(1);
   };
 
-  // Toggle helpers
   const toggleCategory = (id) => {
-    setSelectedCategories((prev) => 
+    setSelectedCategories((prev) =>
       prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id]
     );
     setCurrentPage(1);
@@ -109,20 +217,12 @@ export default function ShopPage({
     setCurrentPage(1);
   };
 
-  const toggleBrand = (b) => {
-    setSelectedBrands((prev) =>
-      prev.includes(b) ? prev.filter((item) => item !== b) : [...prev, b]
-    );
-    setCurrentPage(1);
-  };
-
   const handleResetFilters = () => {
     setHeroSearch('');
     setAppliedSearch('');
     setSelectedPill('all');
     setSelectedCategories([]);
     setSelectedPriceRanges([]);
-    setSelectedBrands([]);
     setMinRating(null);
     setSelectedAvailability(null);
     setSelectedSeller('All Sellers');
@@ -131,86 +231,67 @@ export default function ShopPage({
     if (onShowToast) onShowToast('All catalog filters reset');
   };
 
-  // Filtered and Sorted Products
+  // Client-side refinements when multi-filters are active
   const filteredProducts = useMemo(() => {
-    return SHOP_CATALOG_PRODUCTS.filter((prod) => {
-      // 1. Hero / Applied Search
-      if (appliedSearch) {
-        const query = appliedSearch.toLowerCase();
-        const matches = 
-          prod.name.toLowerCase().includes(query) ||
-          prod.seller.toLowerCase().includes(query) ||
-          prod.categoryName.toLowerCase().includes(query) ||
-          (prod.description && prod.description.toLowerCase().includes(query));
-        if (!matches) return false;
-      }
+    if (!hasClientOnlyFilters) return apiProducts;
 
-      // 2. Category Pill Filter
-      if (selectedPill !== 'all' && prod.category !== selectedPill) {
+    return apiProducts.filter((prod) => {
+      const prodCatId = String(prod.category || '');
+
+      if (selectedPill !== 'all' && prodCatId !== String(selectedPill)) {
         return false;
       }
 
-      // 3. Sidebar Categories Filter
-      if (selectedCategories.length > 0 && !selectedCategories.includes(prod.category)) {
+      if (selectedCategories.length > 0 && !selectedCategories.includes(prodCatId)) {
         return false;
       }
 
-      // 4. Price Ranges Filter
       if (selectedPriceRanges.length > 0) {
         const matchesAnyPrice = selectedPriceRanges.some((rangeId) => {
-          const opt = priceRangeOptions.find((p) => p.id === rangeId);
+          const opt = PRICE_RANGE_OPTIONS.find((p) => p.id === rangeId);
           if (!opt) return false;
           return prod.price >= opt.min && prod.price <= opt.max;
         });
         if (!matchesAnyPrice) return false;
       }
 
-      // 5. Brands Filter
-      if (selectedBrands.length > 0 && !selectedBrands.includes(prod.brand)) {
-        return false;
-      }
-
-      // 6. Rating Filter
       if (minRating !== null && prod.rating < minRating) {
         return false;
       }
 
-      // 7. Availability Filter
       if (selectedAvailability === 'in-stock' && !prod.inStock) return false;
       if (selectedAvailability === 'out-of-stock' && prod.inStock) return false;
 
-      // 8. Seller Filter
       if (selectedSeller !== 'All Sellers' && prod.seller !== selectedSeller) {
         return false;
       }
 
       return true;
-    }).sort((a, b) => {
-      if (sortBy === 'price-low') return a.price - b.price;
-      if (sortBy === 'price-high') return b.price - a.price;
-      if (sortBy === 'rating') return b.rating - a.rating;
-      if (sortBy === 'newest') return b.id.localeCompare(a.id);
-      return b.reviews - a.reviews; // default 'popularity'
     });
   }, [
-    appliedSearch,
+    apiProducts,
+    hasClientOnlyFilters,
     selectedPill,
     selectedCategories,
     selectedPriceRanges,
-    selectedBrands,
     minRating,
     selectedAvailability,
     selectedSeller,
-    sortBy
   ]);
 
-  // Pagination calculation
-  const totalProducts = filteredProducts.length;
-  const totalPages = Math.max(1, Math.ceil(totalProducts / pageSize));
+  const totalProducts = hasClientOnlyFilters
+    ? filteredProducts.length
+    : serverPagination.totalProducts;
+
+  const totalPages = hasClientOnlyFilters
+    ? Math.max(1, Math.ceil(totalProducts / pageSize))
+    : serverPagination.totalPages;
+
   const displayedProducts = useMemo(() => {
+    if (!hasClientOnlyFilters) return filteredProducts;
     const start = (currentPage - 1) * pageSize;
     return filteredProducts.slice(start, start + pageSize);
-  }, [filteredProducts, currentPage, pageSize]);
+  }, [filteredProducts, hasClientOnlyFilters, currentPage, pageSize]);
 
   const handlePageChange = (page) => {
     if (page < 1 || page > totalPages) return;
@@ -227,24 +308,28 @@ export default function ShopPage({
     }
   };
 
-  const activeFiltersCount = 
+  const activeFiltersCount =
     (appliedSearch ? 1 : 0) +
     (selectedPill !== 'all' ? 1 : 0) +
     selectedCategories.length +
     selectedPriceRanges.length +
-    selectedBrands.length +
     (minRating ? 1 : 0) +
     (selectedAvailability ? 1 : 0) +
     (selectedSeller !== 'All Sellers' ? 1 : 0);
+
+  const pageNumbers = useMemo(() => {
+    const pages = [];
+    for (let i = 1; i <= Math.min(totalPages, 5); i += 1) {
+      pages.push(i);
+    }
+    return pages;
+  }, [totalPages]);
 
   return (
     <div className="shop-page-container">
       {/* 1. Breadcrumbs */}
       <div className="shop-breadcrumbs-bar">
-        <button 
-          className="breadcrumb-link" 
-          onClick={onNavigateHome}
-        >
+        <button className="breadcrumb-link" onClick={onNavigateHome}>
           Home
         </button>
         <span className="breadcrumb-separator">›</span>
@@ -256,13 +341,13 @@ export default function ShopPage({
         <div className="shop-hero-content">
           <h1 className="shop-hero-title">Find Something You'll Love</h1>
           <p className="shop-hero-subtitle">
-            Explore thousands of unique products from independent sellers.
+            Explore authentic products directly from independent sellers.
           </p>
 
           <form onSubmit={handleSearchSubmit} className="shop-search-bar-form">
-            <input 
-              type="text" 
-              placeholder="Search products..." 
+            <input
+              type="text"
+              placeholder="Search products..."
               value={heroSearch}
               onChange={(e) => setHeroSearch(e.target.value)}
               className="shop-search-input"
@@ -274,9 +359,9 @@ export default function ShopPage({
         </div>
 
         <div className="shop-hero-visual">
-          <img 
-            src="https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?auto=format&fit=crop&w=900&q=80" 
-            alt="Artisanal Lifestyle Collection" 
+          <img
+            src="https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?auto=format&fit=crop&w=900&q=80"
+            alt="Artisanal Lifestyle Collection"
             className="shop-hero-img"
           />
         </div>
@@ -298,18 +383,17 @@ export default function ShopPage({
         ))}
       </div>
 
-      {/* Anchor for smooth scroll upon pagination */}
       <div id="shop-product-grid-anchor" />
 
-      {/* 4. Main 2-Column Section (Sidebar Filter + Product Grid) */}
+      {/* 4. Main 2-Column Section */}
       <div className="shop-main-layout">
         {/* Left Sidebar Filter */}
         <aside className="shop-sidebar-filters">
           <div className="sidebar-filter-header">
             <h3 className="filter-title">Filter By</h3>
             {activeFiltersCount > 0 && (
-              <button 
-                className="reset-filters-btn" 
+              <button
+                className="reset-filters-btn"
                 onClick={handleResetFilters}
                 title="Reset all filters"
               >
@@ -323,17 +407,20 @@ export default function ShopPage({
           <div className="filter-group">
             <h4 className="group-title">Categories</h4>
             <div className="filter-options-list">
-              {sidebarCategories.map((cat) => (
-                <label key={cat.id} className="filter-checkbox-label">
-                  <input 
-                    type="checkbox" 
-                    checked={selectedCategories.includes(cat.id)}
-                    onChange={() => toggleCategory(cat.id)}
-                    className="filter-checkbox"
-                  />
-                  <span>{cat.label}</span>
-                </label>
-              ))}
+              {categories.map((cat) => {
+                const catId = String(cat._id || cat.id);
+                return (
+                  <label key={catId} className="filter-checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={selectedCategories.includes(catId)}
+                      onChange={() => toggleCategory(catId)}
+                      className="filter-checkbox"
+                    />
+                    <span>{cat.name}</span>
+                  </label>
+                );
+              })}
             </div>
           </div>
 
@@ -341,9 +428,9 @@ export default function ShopPage({
           <div className="filter-group">
             <h4 className="group-title">Price Range</h4>
             <div className="filter-options-list">
-              {priceRangeOptions.map((opt) => (
+              {PRICE_RANGE_OPTIONS.map((opt) => (
                 <label key={opt.id} className="filter-checkbox-label">
-                  <input 
+                  <input
                     type="checkbox"
                     checked={selectedPriceRanges.includes(opt.id)}
                     onChange={() => togglePriceRange(opt.id)}
@@ -355,49 +442,37 @@ export default function ShopPage({
             </div>
           </div>
 
-          {/* Brand */}
-          <div className="filter-group">
-            <h4 className="group-title">Brand</h4>
-            <div className="filter-options-list">
-              {brandOptions.map((brand) => (
-                <label key={brand} className="filter-checkbox-label">
-                  <input 
-                    type="checkbox"
-                    checked={selectedBrands.includes(brand)}
-                    onChange={() => toggleBrand(brand)}
-                    className="filter-checkbox"
-                  />
-                  <span>{brand}</span>
-                </label>
-              ))}
-            </div>
-          </div>
-
           {/* Rating */}
           <div className="filter-group">
             <h4 className="group-title">Rating</h4>
             <div className="filter-options-list">
               {[4, 3, 2].map((stars) => (
                 <label key={stars} className="filter-radio-label">
-                  <input 
-                    type="radio" 
+                  <input
+                    type="radio"
                     name="rating-filter"
                     checked={minRating === stars}
+                    onClick={() => {
+                      if (minRating === stars) {
+                        setMinRating(null);
+                        setCurrentPage(1);
+                      }
+                    }}
                     onChange={() => {
-                      setMinRating(minRating === stars ? null : stars);
+                      setMinRating(stars);
                       setCurrentPage(1);
                     }}
                     className="filter-radio"
                   />
                   <div className="rating-stars-row">
                     {[1, 2, 3, 4, 5].map((s) => (
-                      <Star 
-                        key={s} 
-                        size={14} 
+                      <Star
+                        key={s}
+                        size={14}
                         className={s <= stars ? 'star-filled' : 'star-muted'}
                       />
                     ))}
-                    <span className="rating-up-text">& Up</span>
+                    <span className="rating-up-text">&amp; Up</span>
                   </div>
                 </label>
               ))}
@@ -409,7 +484,7 @@ export default function ShopPage({
             <h4 className="group-title">Availability</h4>
             <div className="filter-options-list">
               <label className="filter-checkbox-label">
-                <input 
+                <input
                   type="checkbox"
                   checked={selectedAvailability === 'in-stock'}
                   onChange={() => {
@@ -421,7 +496,7 @@ export default function ShopPage({
                 <span>In Stock</span>
               </label>
               <label className="filter-checkbox-label">
-                <input 
+                <input
                   type="checkbox"
                   checked={selectedAvailability === 'out-of-stock'}
                   onChange={() => {
@@ -439,8 +514,8 @@ export default function ShopPage({
           <div className="filter-group">
             <h4 className="group-title">Seller</h4>
             <div className="seller-select-wrap">
-              <select 
-                value={selectedSeller} 
+              <select
+                value={selectedSeller}
                 onChange={(e) => {
                   setSelectedSeller(e.target.value);
                   setCurrentPage(1);
@@ -458,12 +533,11 @@ export default function ShopPage({
 
         {/* Right Products Content */}
         <div className="shop-products-column">
-          {/* Top Bar (Title, Count & Sort By) */}
           <div className="products-header-bar">
             <div>
               <h2 className="all-products-heading">
-                {selectedPill !== 'all' 
-                  ? categoryPills.find((p) => p.id === selectedPill)?.label || 'Products' 
+                {selectedPill !== 'all'
+                  ? categoryPills.find((p) => p.id === selectedPill)?.label || 'Products'
                   : 'All Products'}
               </h2>
               <p className="products-count-text">
@@ -475,9 +549,12 @@ export default function ShopPage({
             <div className="sort-by-wrap">
               <span className="sort-label">Sort by:</span>
               <div className="sort-select-container">
-                <select 
-                  value={sortBy} 
-                  onChange={(e) => setSortBy(e.target.value)}
+                <select
+                  value={sortBy}
+                  onChange={(e) => {
+                    setSortBy(e.target.value);
+                    setCurrentPage(1);
+                  }}
                   className="sort-by-select"
                 >
                   <option value="popularity">Popularity</option>
@@ -491,8 +568,18 @@ export default function ShopPage({
             </div>
           </div>
 
-          {/* Product Cards Grid (4 Columns) */}
-          {displayedProducts.length === 0 ? (
+          {error && (
+            <p role="alert" style={{ color: '#c0392b', marginBottom: '1rem' }}>
+              {error}
+            </p>
+          )}
+
+          {loading ? (
+            <div className="shop-no-results">
+              <h3>Loading products...</h3>
+              <p>Fetching latest catalog items from verified sellers.</p>
+            </div>
+          ) : displayedProducts.length === 0 ? (
             <div className="shop-no-results">
               <h3>No products found</h3>
               <p>We couldn't find any products matching your active filters.</p>
@@ -503,19 +590,18 @@ export default function ShopPage({
           ) : (
             <div className="shop-grid-4col">
               {displayedProducts.map((product) => {
-                const isWishlisted = wishlistIds.includes(product.id);
+                const prodId = String(product._id || product.id);
+                const isWishlisted = wishlistIds.includes(prodId);
                 return (
-                  <div key={product.id} className="shop-product-card">
-                    {/* Image Box */}
+                  <div key={prodId} className="shop-product-card">
                     <div className="card-image-wrap" onClick={() => onQuickView && onQuickView(product)}>
-                      <img 
-                        src={product.image} 
-                        alt={product.name} 
-                        className="card-product-img" 
+                      <img
+                        src={product.image}
+                        alt={product.name}
+                        className="card-product-img"
                         loading="lazy"
                       />
-                      {/* Wishlist Button */}
-                      <button 
+                      <button
                         className={`card-wishlist-btn ${isWishlisted ? 'active' : ''}`}
                         onClick={(e) => {
                           e.stopPropagation();
@@ -523,18 +609,17 @@ export default function ShopPage({
                         }}
                         aria-label="Save to Wishlist"
                       >
-                        <Heart 
-                          size={16} 
-                          fill={isWishlisted ? '#cf633a' : 'none'} 
-                          color={isWishlisted ? '#cf633a' : '#1e1d1a'} 
+                        <Heart
+                          size={16}
+                          fill={isWishlisted ? '#cf633a' : 'none'}
+                          color={isWishlisted ? '#cf633a' : '#1e1d1a'}
                         />
                       </button>
                     </div>
 
-                    {/* Card Body */}
                     <div className="card-info-wrap">
-                      <h3 
-                        className="card-product-name" 
+                      <h3
+                        className="card-product-name"
                         onClick={() => onQuickView && onQuickView(product)}
                       >
                         {product.name}
@@ -543,30 +628,31 @@ export default function ShopPage({
 
                       <div className="card-rating-row">
                         <Star size={13} className="card-rating-star" />
-                        <span className="card-rating-score">{product.rating}</span>
+                        <span className="card-rating-score">{product.rating || 4.8}</span>
                         <span className="card-reviews-count">
-                          ({product.reviews >= 1000 ? `${(product.reviews / 1000).toFixed(1)}k` : product.reviews})
+                          ({product.reviews >= 1000 ? `${(product.reviews / 1000).toFixed(1)}k` : (product.reviews || 0)})
                         </span>
                       </div>
 
                       <div className="card-price-row">
-                        <span className="card-price-current">₹{product.price.toLocaleString()}</span>
+                        <span className="card-price-current">₹{Number(product.price || 0).toLocaleString('en-IN')}</span>
                         {product.originalPrice && (
-                          <span className="card-price-original">₹{product.originalPrice.toLocaleString()}</span>
+                          <span className="card-price-original">₹{Number(product.originalPrice).toLocaleString('en-IN')}</span>
                         )}
-                        {product.discount && (
-                          <span className="card-discount-badge">{product.discount}</span>
+                        {Number(product.discount) > 0 && (
+                          <span className="card-discount-badge">{product.discount}% OFF</span>
                         )}
                       </div>
 
-                      <button 
+                      <button
                         className="card-add-cart-btn"
+                        disabled={product.stock === 0}
                         onClick={() => {
                           if (onAddToCart) onAddToCart(product);
                         }}
                       >
                         <ShoppingCart size={15} />
-                        <span>Add to Cart</span>
+                        <span>{product.stock === 0 ? 'Out of Stock' : 'Add to Cart'}</span>
                       </button>
                     </div>
                   </div>
@@ -575,10 +661,10 @@ export default function ShopPage({
             </div>
           )}
 
-          {/* 5. Pagination Bar */}
+          {/* Pagination Bar */}
           {totalPages > 1 && (
             <div className="shop-pagination-bar">
-              <button 
+              <button
                 className="pagination-arrow-btn"
                 onClick={() => handlePageChange(currentPage - 1)}
                 disabled={currentPage === 1}
@@ -587,35 +673,20 @@ export default function ShopPage({
                 <ChevronLeft size={16} />
               </button>
 
-              <button 
-                className={`pagination-number-btn ${currentPage === 1 ? 'active' : ''}`}
-                onClick={() => handlePageChange(1)}
-              >
-                1
-              </button>
-
-              {totalPages >= 2 && (
-                <button 
-                  className={`pagination-number-btn ${currentPage === 2 ? 'active' : ''}`}
-                  onClick={() => handlePageChange(2)}
+              {pageNumbers.map((page) => (
+                <button
+                  key={page}
+                  className={`pagination-number-btn ${currentPage === page ? 'active' : ''}`}
+                  onClick={() => handlePageChange(page)}
                 >
-                  2
+                  {page}
                 </button>
-              )}
+              ))}
 
-              {totalPages >= 3 && (
-                <button 
-                  className={`pagination-number-btn ${currentPage === 3 ? 'active' : ''}`}
-                  onClick={() => handlePageChange(3)}
-                >
-                  3
-                </button>
-              )}
+              {totalPages > 5 && <span className="pagination-ellipsis">...</span>}
 
-              {totalPages > 4 && <span className="pagination-ellipsis">...</span>}
-
-              {totalPages > 3 && (
-                <button 
+              {totalPages > 5 && (
+                <button
                   className={`pagination-number-btn ${currentPage === totalPages ? 'active' : ''}`}
                   onClick={() => handlePageChange(totalPages)}
                 >
@@ -623,7 +694,7 @@ export default function ShopPage({
                 </button>
               )}
 
-              <button 
+              <button
                 className="pagination-arrow-btn"
                 onClick={() => handlePageChange(currentPage + 1)}
                 disabled={currentPage === totalPages}
@@ -636,7 +707,7 @@ export default function ShopPage({
         </div>
       </div>
 
-      {/* 6. Newsletter Banner */}
+      {/* Newsletter Banner */}
       <section className="shop-newsletter-banner">
         <div className="newsletter-card-inner">
           <div className="newsletter-text-col">
@@ -645,10 +716,10 @@ export default function ShopPage({
           </div>
 
           <form onSubmit={handleNewsletterSubmit} className="newsletter-form-col">
-            <input 
-              type="email" 
+            <input
+              type="email"
               required
-              placeholder="Enter your email address..." 
+              placeholder="Enter your email address..."
               value={newsletterEmail}
               onChange={(e) => setNewsletterEmail(e.target.value)}
               className="newsletter-email-input"
@@ -662,4 +733,3 @@ export default function ShopPage({
     </div>
   );
 }
-
