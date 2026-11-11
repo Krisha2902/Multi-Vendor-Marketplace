@@ -12,7 +12,8 @@ import {
   ChevronDown,
   ShieldCheck,
   Store,
-  Sparkles
+  Sparkles,
+  Package
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -26,7 +27,8 @@ export default function Navbar({
   activeTab,
   setActiveTab,
   onOpenSellerModal,
-  onOpenAuthModal
+  onOpenAuthModal,
+  onOpenMyOrders
 }) {
   const { user, logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -55,7 +57,6 @@ export default function Navbar({
   const handleNavClick = (id) => {
     setActiveTab(id);
     setMobileMenuOpen(false);
-    
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -123,6 +124,19 @@ export default function Navbar({
             )}
           </button>
 
+          {/* Customer My Orders Quick Button (Desktop) */}
+          {user && (
+            <button
+              className="action-icon-btn"
+              title="My Orders"
+              onClick={onOpenMyOrders}
+              aria-label="My Orders"
+              style={{ position: 'relative' }}
+            >
+              <Package size={21} />
+            </button>
+          )}
+
           {/* Role Portal Quick Buttons */}
           {user?.role === 'admin' && (
             <button
@@ -176,6 +190,18 @@ export default function Navbar({
                     </div>
                   </div>
                   <div className="dropdown-divider" />
+
+                  {/* My Orders */}
+                  <button
+                    className="dropdown-item-btn portal-link-btn"
+                    onClick={() => {
+                      if (onOpenMyOrders) onOpenMyOrders();
+                      setUserDropdownOpen(false);
+                    }}
+                  >
+                    <Package size={16} />
+                    <span>My Orders</span>
+                  </button>
 
                   {/* Role Specific Navigation */}
                   {user.role === 'admin' && (
@@ -311,6 +337,20 @@ export default function Navbar({
               >
                 <UserIcon size={18} />
                 <span>Sign In / Register</span>
+              </button>
+            )}
+
+            {user && (
+              <button
+                className="mobile-seller-btn"
+                style={{ background: '#f8fafc', color: '#1e293b', border: '1px solid #e2e8f0' }}
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  if (onOpenMyOrders) onOpenMyOrders();
+                }}
+              >
+                <Package size={16} />
+                <span>My Orders History</span>
               </button>
             )}
 

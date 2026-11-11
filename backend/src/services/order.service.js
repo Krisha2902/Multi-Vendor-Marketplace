@@ -1,6 +1,8 @@
 import mongoose from 'mongoose';
 import Product from '../models/Product.js';
 import * as orderRepo from '../repositories/order.repository.js';
+import * as vendorRepo from '../repositories/vendor.repository.js';
+import * as productRepo from '../repositories/product.repository.js';
 import { ApiError } from '../utils/ApiError.js';
 
 export const placeOrder = async ({ customerId, items, shippingAddress, paymentMethod = 'card' }) => {
@@ -149,9 +151,9 @@ export const getOrderById = async (orderId, userId, userRole) => {
 
   // Only allow admin or the customer who placed the order (or vendor who has items in it)
   if (userRole !== 'admin') {
-    const isCustomer = order.customer._id.toString() === userId.toString();
+    const isCustomer = order.customer && order.customer._id.toString() === userId.toString();
     const isVendor = order.items.some(
-      (it) => it.vendor && it.vendor._id.toString() === userId.toString()
+      (it) => it.vendor && it.vendor.toString() === userId.toString()
     );
 
     if (!isCustomer && !isVendor) {
@@ -160,4 +162,142 @@ export const getOrderById = async (orderId, userId, userRole) => {
   }
 
   return order;
+};
+
+// Day 6: Vendor Order Management & Fulfillment
+export const getVendorOrders = async (userId) => {
+  const vendor = await vendorRepo.findByUserId(userId);
+  if (!vendor || vendor.status !== 'approved') {
+    throw new ApiError(403, 'Approved vendor profile required to view orders');
+  }
+
+  const allOrders = await orderRepo.findByVendor(vendor._id);
+
+  // Filter orders to only expose vendor's items & relevant customer shipping info
+  return allOrders.map((ord) => {
+    const vendorItems = ord.items.filter(
+      (item) => item.vendor && item.vendor.toString() === vendor._id.toString()
+    );
+    const vendorTotal = vendorItems.reduce(
+      (sum, it) => sum + (it.price * it.quantity),
+      0
+    );
+
+    return {
+      _id: ord._id,
+      orderNumber: ord.orderNumber,
+      createdAt: ord.createdAt,
+      customer: ord.customer ? { name: ord.customer.name, email: ord.customer.email } : null,
+      shippingAddress: ord.shippingAddress,
+      paymentMethod: ord.paymentMethod,
+      paymentStatus: ord.paymentStatus,
+      status: ord.status,
+      items: vendorItems,
+      vendorTotal,
+    };
+  });
+};
+
+export const updateVendorOrderStatus = async ({ userId, orderId, status, itemId }) => {
+  const validStatuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
+  if (!validStatuses.includes(status)) {
+    throw new ApiError(400, `Invalid order status. Allowed: ${validStatuses.join(', ')}`);
+  }
+
+  const vendor = await vendorRepo.findByUserId(userId);
+  if (!vendor || vendor.status !== 'approved') {
+    throw new ApiError(403, 'Approved vendor profile required');
+  }
+
+  const order = await orderRepo.findById(orderId);
+  if (!order) {
+    throw new ApiError(404, 'Order not found');
+  }
+
+  // Find vendor's items in this order
+  let hasVendorItems = false;
+  for (const item of order.items) {
+    if (item.vendor && item.vendor._id.toString() === vendor._id.toString()) {
+      hasVendorItems = true;
+      if (!itemId || item._id.toString() === itemId.toString()) {
+        item.itemStatus = status;
+      }
+    }
+  }
+
+  if (!hasVendorItems) {
+    throw new ApiError(403, 'You do not have any items in this order to fulfill');
+  }
+
+  // Recalculate overall order status based on item statuses
+  const allDelivered = order.items.every((it) => it.itemStatus === 'delivered');
+  const allShipped = order.items.every((it) => it.itemStatus === 'shipped' || it.itemStatus === 'delivered');
+  const anyProcessing = order.items.some((it) => it.itemStatus === 'processing');
+
+  if (allDelivered) {
+    order.status = 'delivered';
+  } else if (allShipped) {
+    order.status = 'shipped';
+  } else if (anyProcessing) {
+    order.status = 'processing';
+  } else {
+    order.status = status;
+  }
+
+  await order.save();
+  return order;
+};
+
+// Day 6: Vendor Statistics (Revenue, Total Orders, Products, Pending)
+export const getVendorStats = async (userId) => {
+  const vendor = await vendorRepo.findByUserId(userId);
+  if (!vendor || vendor.status !== 'approved') {
+    throw new ApiError(403, 'Approved vendor profile required');
+  }
+
+  const [totalProducts, vendorOrders] = await Promise.all([
+    productRepo.countByVendor(vendor._id),
+    orderRepo.findByVendor(vendor._id),
+  ]);
+
+  let totalRevenue = 0;
+  let pendingOrders = 0;
+
+  for (const ord of vendorOrders) {
+    const vendorItems = ord.items.filter(
+      (item) => item.vendor && item.vendor.toString() === vendor._id.toString()
+    );
+
+    const orderSubtotal = vendorItems.reduce(
+      (sum, it) => sum + (it.price * it.quantity),
+      0
+    );
+
+    // Count revenue if order was confirmed / paid or delivered
+    if (ord.paymentStatus === 'paid' || ord.status === 'delivered') {
+      totalRevenue += orderSubtotal;
+    }
+
+    const hasPending = vendorItems.some(
+      (it) => it.itemStatus === 'pending' || it.itemStatus === 'processing'
+    );
+    if (hasPending) {
+      pendingOrders += 1;
+    }
+  }
+
+  return {
+    vendor: {
+      id: vendor._id,
+      shopName: vendor.shopName,
+      category: vendor.category,
+      status: vendor.status,
+    },
+    stats: {
+      totalProducts,
+      totalOrders: vendorOrders.length,
+      totalRevenue,
+      pendingOrders,
+    },
+  };
 };

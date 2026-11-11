@@ -100,10 +100,10 @@ Har din ek **vertical slice** hoga: backend API + usi din frontend integration. 
 **End of day:** Customer order place kar sakta hai aur order ID DB se aata hai.
 
 ### Day 6 — Order Lifecycle
-- [ ] `GET /orders/my` + "My Orders" page (list + detail)
-- [ ] `GET /vendor/orders` (sirf apne items)
-- [ ] `PATCH /vendor/orders/:id/status`: `pending → processing → shipped → delivered`
-- [ ] Vendor dashboard me basic stats (total orders, revenue, products)
+- [x] `GET /orders/my` + "My Orders" page (list + detail)
+- [x] `GET /vendor/orders` (sirf apne items)
+- [x] `PATCH /vendor/orders/:id/status`: `pending → processing → shipped → delivered`
+- [x] Vendor dashboard me basic stats (total orders, revenue, products)
 
 **End of day:** Order ka poora lifecycle chalta hai.
 

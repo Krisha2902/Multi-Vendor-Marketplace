@@ -23,6 +23,7 @@ import SellerModal from './components/SellerModal';
 import SellerDetailModal from './components/SellerDetailModal';
 import CheckoutModal from './components/CheckoutModal';
 import AuthModal from './components/AuthModal';
+import MyOrdersModal from './components/MyOrdersModal';
 import Toast from './components/Toast';
 
 import { FEATURED_PRODUCTS, NEW_ARRIVALS, CATEGORIES } from './data/mockData';
@@ -87,6 +88,7 @@ export default function App() {
   const [isSellerModalOpen, setIsSellerModalOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isMyOrdersOpen, setIsMyOrdersOpen] = useState(false);
   const [quickViewProduct, setQuickViewProduct] = useState(null);
   const [selectedSeller, setSelectedSeller] = useState(null);
 
@@ -218,6 +220,7 @@ export default function App() {
         setActiveTab={setActiveTab}
         onOpenSellerModal={() => setIsSellerModalOpen(true)}
         onOpenAuthModal={() => setIsAuthModalOpen(true)}
+        onOpenMyOrders={() => setIsMyOrdersOpen(true)}
       />
 
       {/* Main Page Content */}
@@ -464,6 +467,17 @@ export default function App() {
         cartItems={cartItems}
         onOrderComplete={handleOrderComplete}
         onOpenAuthModal={() => setIsAuthModalOpen(true)}
+      />
+
+      {/* Customer My Orders History Modal (Day 6) */}
+      <MyOrdersModal
+        isOpen={isMyOrdersOpen}
+        onClose={() => setIsMyOrdersOpen(false)}
+        onShowToast={showToast}
+        onNavigateShop={() => {
+          setActiveTab('shop');
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
       />
 
       {/* Auth Modal (Login / Register) */}

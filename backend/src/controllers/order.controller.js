@@ -40,3 +40,36 @@ export const getOrderById = asyncHandler(async (req, res) => {
   });
 });
 
+// Day 6: Vendor Order Management & Stats
+export const getVendorOrders = asyncHandler(async (req, res) => {
+  const orders = await orderService.getVendorOrders(req.user._id);
+  res.json({
+    success: true,
+    count: orders.length,
+    orders,
+  });
+});
+
+export const updateVendorOrderStatus = asyncHandler(async (req, res) => {
+  const { status, itemId } = req.body;
+  const order = await orderService.updateVendorOrderStatus({
+    userId: req.user._id,
+    orderId: req.params.id,
+    status,
+    itemId,
+  });
+
+  res.json({
+    success: true,
+    message: `Order status updated to ${status}`,
+    order,
+  });
+});
+
+export const getVendorStats = asyncHandler(async (req, res) => {
+  const data = await orderService.getVendorStats(req.user._id);
+  res.json({
+    success: true,
+    ...data,
+  });
+});
